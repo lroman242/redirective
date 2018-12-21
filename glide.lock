@@ -1,0 +1,10 @@
+hash: 37ac1e80dee90dd3c8c58fe6099944edc49f5d1d61d1f555416122383a50851d
+updated: 2018-12-17T22:08:58.867750209+02:00
+imports:
+- name: github.com/benbjohnson/phantomjs
+  version: 6499a20f5cd6e4264994b4d95e49b6f21aafef79
+- name: github.com/satori/go.uuid
+  version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
+- name: github.com/tebeka/selenium
+  version: 2ccea6e0c0e7425dd3bb6ab291215e2048fd8743
+testImports: []
