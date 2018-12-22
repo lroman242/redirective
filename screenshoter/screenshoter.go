@@ -1,8 +1,7 @@
 package screenshoter
 
 import (
-	"github.com/lroman242/redirective/phantomjs"
-	//"github.com/benbjohnson/phantomjs"
+	"github.com/benbjohnson/phantomjs"
 	"net/url"
 	"time"
 )
@@ -13,7 +12,7 @@ type ScreenSize struct {
 }
 
 type ScreenShoter struct {
-	Url     *url.URL     `json:"url"`
+	Url     *url.URL    `json:"url"`
 	Size    *ScreenSize `json:"size"`
 	Timeout int         `json:"timeout"`
 	Image   string      `json:"image"`
