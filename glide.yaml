@@ -1,6 +1,5 @@
 package: github.com/lroman242/redirective
 import:
-- package: github.com/benbjohnson/phantomjs
 - package: github.com/satori/go.uuid
   version: ~1.2.0
 - package: github.com/raff/godet
