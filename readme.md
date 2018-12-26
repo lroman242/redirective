@@ -1,3 +1,9 @@
+## TODO
+   - HTTP API
+   - WS API
+   - tests [>= 80%]
+   - add linter
+
 ## Install chrome headless
 ###Uninstall previous chrome
 ``
