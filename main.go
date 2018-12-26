@@ -57,11 +57,11 @@ func main() {
 	//})
 	//
 	//remote.CallbackEvent("Network.responseReceived", func(params godet.Params) {
-		//fmt.Println("Network.requestIntercepted")
-		//fmt.Printf("%v+\n", params)
-		//fmt.Println("responseReceived",
-		//	params["type"],
-		//	params["response"].(map[string]interface{})["url"])
+	//fmt.Println("Network.requestIntercepted")
+	//fmt.Printf("%v+\n", params)
+	//fmt.Println("responseReceived",
+	//	params["type"],
+	//	params["response"].(map[string]interface{})["url"])
 	//})
 
 	//remote.CallbackEvent("Log.entryAdded", func(params godet.Params) {
@@ -102,9 +102,9 @@ func main() {
 
 	// evaluate Javascript expression in existing context
 	//res, _ := remote.EvaluateWrap(`
-    //        console.log("hello from godet!")
-    //        return 42;
-    //    `)
+	//        console.log("hello from godet!")
+	//        return 42;
+	//    `)
 	//fmt.Println(res)
 	time.Sleep(5 * time.Second)
 
