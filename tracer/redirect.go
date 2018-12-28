@@ -11,20 +11,20 @@ type redirect struct {
 	RequestHeaders  *http.Header           `json:"request_headers"`
 	ResponseHeaders *http.Header           `json:"response_headers"`
 	Cookies         []*http.Cookie         `json:"cookies"`
-	Body            []byte                 `json:"body"`
+	//Body            []byte                 `json:"body"`
 	Status          int                    `json:"status"`
 	Initiator       string                 `json:"initiator"`
 	OtherInfo       map[string]interface{} `json:"other_info"`
 }
 
-func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header, cookies []*http.Cookie, body []byte, status int, initiator string) *redirect {
+func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header, cookies []*http.Cookie, /*body []byte,*/ status int, initiator string) *redirect {
 	return &redirect{
 		From:            from,
 		To:              to,
 		RequestHeaders:  requestHeaders,
 		ResponseHeaders: responseHeaders,
 		Cookies:         cookies,
-		Body:            body,
+		//Body:            body,
 		Status:          status,
 		Initiator:       initiator,
 	}
