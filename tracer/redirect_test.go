@@ -28,13 +28,13 @@ func TestNewRedirect(t *testing.T) {
 		Value:    "testCookieValue",
 	}}
 
-	body := []byte("test body")
+	//body := []byte("test body")
 
 	status := http.StatusFound
 
 	initiator := "test script"
 
-	redirect := NewRedirect(from, to, requestHeaders, responseHeaders, cookies, body, status, initiator)
+	redirect := NewRedirect(from, to, requestHeaders, responseHeaders, cookies, /*body,*/ status, initiator)
 
 	if redirect.Status != status {
 		t.Error("Invalid status on redirect creating")
@@ -48,9 +48,9 @@ func TestNewRedirect(t *testing.T) {
 		t.Error("Invalid To URL on redirect creating")
 	}
 
-	if string(redirect.Body) != string(body) {
-		t.Error("Invalid Body on redirect creating")
-	}
+	//if string(redirect.Body) != string(body) {
+	//	t.Error("Invalid Body on redirect creating")
+	//}
 
 	if redirect.Initiator != initiator {
 		t.Error("Invalid Initiator on redirect creating")
