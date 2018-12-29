@@ -34,7 +34,7 @@ func TestNewRedirect(t *testing.T) {
 
 	initiator := "test script"
 
-	redirect := NewRedirect(from, to, requestHeaders, responseHeaders, cookies, /*body,*/ status, initiator)
+	redirect := NewRedirect(from, to, requestHeaders, responseHeaders, cookies /*body,*/, status, initiator)
 
 	if redirect.Status != status {
 		t.Error("Invalid status on redirect creating")
