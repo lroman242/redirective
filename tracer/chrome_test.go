@@ -3,8 +3,91 @@ package tracer
 import (
 	"encoding/json"
 	"github.com/raff/godet"
+	"net/url"
 	"testing"
 )
+
+func TestNewChromeTracer(t *testing.T) {
+	// connect to Chrome instance
+	remote, err := godet.Connect("localhost:9222", false)
+	if err != nil {
+		t.Fatalf("cannot connect to Chrome instance: %s", err)
+		return
+	}
+
+	chr := NewChromeTracer(remote)
+
+	if chr.instance != remote {
+		t.Error("wrong remote debuger instance")
+	}
+
+	err = remote.Close()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestChromeTracer_GetTrace(t *testing.T) {
+	// connect to Chrome instance
+	remote, err := godet.Connect("localhost:9222", false)
+	if err != nil {
+		t.Fatalf("cannot connect to Chrome instance: %s", err)
+		return
+	}
+	defer remote.Close()
+
+	chr := NewChromeTracer(remote)
+
+	if chr.instance != remote {
+		t.Error("wrong remote debuger instance")
+	}
+	traceUrl, err := url.Parse("https://www.google.com.ua")
+	if err != nil {
+		t.Error(err)
+	}
+
+	redirects, err := chr.GetTrace(traceUrl)
+	if err == nil || err.Error() != "No redirects found" {
+		t.Errorf("Expect error: No redirects found")
+	}
+
+	if len(redirects) != 0 {
+		t.Error("No redirects expected")
+	}
+}
+
+func TestChromeTracer_GetTrace2(t *testing.T) {
+	// connect to Chrome instance
+	remote, err := godet.Connect("localhost:9222", false)
+	if err != nil {
+		t.Fatalf("cannot connect to Chrome instance: %s", err)
+		return
+	}
+	defer remote.Close()
+
+	chr := NewChromeTracer(remote)
+
+	if chr.instance != remote {
+		t.Error("wrong remote debuger instance")
+	}
+
+	traceUrl, err := url.Parse("http://google.com")
+	if err != nil {
+		t.Error(err)
+	}
+
+	redirects, err := chr.GetTrace(traceUrl)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(redirects) != 2 {
+		t.Errorf("Two redirects expected but get %d", len(redirects))
+		for _, redir := range redirects {
+			t.Errorf("From %s -> To %s", redir.From.String(), redir.To.String())
+		}
+	}
+}
 
 func TestParseCookies(t *testing.T) {
 	rawCookie := "foo=bar; expires=Mon, 31-Dec-2055 23:59:59 GMT; Max-Age=259200; domain=test.com; Path=/test"
@@ -112,6 +195,38 @@ func TestParseRedirectFromRaw5(t *testing.T) {
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect. request param not exists" {
 		t.Errorf("Expect error: Invalid redirect. request param not exists")
+	}
+}
+
+func TestParseRedirectFromRaw6(t *testing.T)  {
+	redirectParams := godet.Params{}
+	if err := json.Unmarshal([]byte(params6), &redirectParams); err != nil {
+		panic(err)
+	}
+	_, err := parseRedirectFromRaw(redirectParams)
+	if err == nil || err.Error() != "Invalid redirect. redirectResponse param headers not exists" {
+		t.Errorf("Invalid redirect. redirectResponse param headers not exists")
+	}
+}
+func TestParseRedirectFromRaw7(t *testing.T)  {
+	redirectParams := godet.Params{}
+	if err := json.Unmarshal([]byte(params7), &redirectParams); err != nil {
+		panic(err)
+	}
+	_, err := parseRedirectFromRaw(redirectParams)
+	if err == nil || err.Error() != "Invalid redirect. redirectResponse param url not exists" {
+		t.Errorf("Expect error: Invalid redirect. redirectResponse param url not exists")
+	}
+}
+
+func TestParseRedirectFromRaw8(t *testing.T)  {
+	redirectParams := godet.Params{}
+	if err := json.Unmarshal([]byte(params8), &redirectParams); err != nil {
+		panic(err)
+	}
+	_, err := parseRedirectFromRaw(redirectParams)
+	if err == nil || err.Error() != "Invalid redirect. request param headers not exists" {
+		t.Errorf("Expect error: Invalid redirect. request param headers not exists")
 	}
 }
 
@@ -443,6 +558,229 @@ const params5  = `
       "workerStart": -1
     },
     "url": "user@httpstep1test:ew?something#wron=here"
+  },
+  "requestId": "E8DAACD689A021E0963DA6DDC3FC9AF9",
+  "timestamp": 15876.109173,
+  "type": "Document",
+  "wallTime": 1546021943.764962
+}`
+
+const params6  = `
+{
+  "documentURL": "http://step1.test",
+  "frameId": "F394EA807250832376BE81745B17B0E9",
+  "hasUserGesture": false,
+  "initiator": {
+    "type": "other"
+  },
+  "loaderId": "E8DAACD689A021E0963DA6DDC3FC9AF9",
+  "redirectResponse": {
+    "connectionId": 56,
+    "connectionReused": false,
+    "encodedDataLength": 427,
+    "fromDiskCache": false,
+    "fromServiceWorker": false,
+    "headersText": "HTTP/1.1 302 Found\r\nServer: nginx/1.10.3 (Ubuntu)\r\nDate: Fri, 28 Dec 2018 18:32:22 GMT\r\nContent-Type: text/html; charset=UTF-8\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\nSet-Cookie: foo=bar; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test.com\r\nLocation: http://step1.com\r\n\r\n",
+    "mimeType": "text/html",
+    "protocol": "http/1.1",
+    "remoteIPAddress": "104.248.96.70",
+    "remotePort": 80,
+    "requestHeaders": {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+      "Accept-Encoding": "gzip, deflate",
+      "Connection": "keep-alive",
+      "Host": "step0.com",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36"
+    },
+    "requestHeadersText": "GET / HTTP/1.1\r\nHost: step0.test\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate\r\n",
+    "securityState": "neutral",
+    "status": 302,
+    "statusText": "Found",
+    "timing": {
+      "connectEnd": 464.923,
+      "connectStart": 113.478,
+      "dnsEnd": 113.478,
+      "dnsStart": 0.105,
+      "proxyEnd": -1,
+      "proxyStart": -1,
+      "pushEnd": 0,
+      "pushStart": 0,
+      "receiveHeadersEnd": 1009.774,
+      "requestTime": 15875.097865,
+      "sendEnd": 465.061,
+      "sendStart": 464.998,
+      "sslEnd": -1,
+      "sslStart": -1,
+      "workerReady": -1,
+      "workerStart": -1
+    },
+    "url": "http://step0.test"
+  },
+  "request": {
+    "headers": {
+      "Test": "redirective-request-header",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36"
+    },
+    "initialPriority": "VeryHigh",
+    "method": "GET",
+    "mixedContentType": "none",
+    "referrerPolicy": "no-referrer-when-downgrade",
+    "url": "http://step0.test"
+  },
+  "requestId": "E8DAACD689A021E0963DA6DDC3FC9AF9",
+  "timestamp": 15876.109173,
+  "type": "Document",
+  "wallTime": 1546021943.764962
+}`
+const params7  = `
+{
+  "documentURL": "http://step1.test",
+  "frameId": "F394EA807250832376BE81745B17B0E9",
+  "hasUserGesture": false,
+  "initiator": {
+    "type": "other"
+  },
+  "loaderId": "E8DAACD689A021E0963DA6DDC3FC9AF9",
+  "redirectResponse": {
+    "connectionId": 56,
+    "connectionReused": false,
+    "encodedDataLength": 427,
+    "fromDiskCache": false,
+    "fromServiceWorker": false,
+    "headers": {
+      "Test": "redirective-response-header",
+      "Connection": "keep-alive",
+      "Content-Type": "text/html; charset=UTF-8",
+      "Date": "Fri, 28 Dec 2018 18:32:22 GMT",
+      "Location": "http://step1.test",
+      "Server": "nginx/1.10.3 (Ubuntu)",
+      "Set-Cookie": "foo=bar; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test.com",
+      "Transfer-Encoding": "chunked"
+    },
+    "headersText": "HTTP/1.1 302 Found\r\nServer: nginx/1.10.3 (Ubuntu)\r\nDate: Fri, 28 Dec 2018 18:32:22 GMT\r\nContent-Type: text/html; charset=UTF-8\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\nSet-Cookie: foo=bar; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test.com\r\nLocation: http://step1.com\r\n\r\n",
+    "mimeType": "text/html",
+    "protocol": "http/1.1",
+    "remoteIPAddress": "104.248.96.70",
+    "remotePort": 80,
+    "requestHeaders": {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+      "Accept-Encoding": "gzip, deflate",
+      "Connection": "keep-alive",
+      "Host": "step0.com",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36"
+    },
+    "requestHeadersText": "GET / HTTP/1.1\r\nHost: step0.test\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate\r\n",
+    "securityState": "neutral",
+    "status": 302,
+    "statusText": "Found",
+    "timing": {
+      "connectEnd": 464.923,
+      "connectStart": 113.478,
+      "dnsEnd": 113.478,
+      "dnsStart": 0.105,
+      "proxyEnd": -1,
+      "proxyStart": -1,
+      "pushEnd": 0,
+      "pushStart": 0,
+      "receiveHeadersEnd": 1009.774,
+      "requestTime": 15875.097865,
+      "sendEnd": 465.061,
+      "sendStart": 464.998,
+      "sslEnd": -1,
+      "sslStart": -1,
+      "workerReady": -1,
+      "workerStart": -1
+    }
+  },
+  "request": {
+    "headers": {
+      "Test": "redirective-request-header",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36"
+    },
+    "initialPriority": "VeryHigh",
+    "method": "GET",
+    "mixedContentType": "none",
+    "referrerPolicy": "no-referrer-when-downgrade",
+    "url": "http://step0.test"
+  },
+  "requestId": "E8DAACD689A021E0963DA6DDC3FC9AF9",
+  "timestamp": 15876.109173,
+  "type": "Document",
+  "wallTime": 1546021943.764962
+}`
+
+const params8  = `
+{
+  "documentURL": "http://step1.test",
+  "frameId": "F394EA807250832376BE81745B17B0E9",
+  "hasUserGesture": false,
+  "initiator": {
+    "type": "other"
+  },
+  "loaderId": "E8DAACD689A021E0963DA6DDC3FC9AF9",
+  "redirectResponse": {
+    "connectionId": 56,
+    "connectionReused": false,
+    "encodedDataLength": 427,
+    "fromDiskCache": false,
+    "fromServiceWorker": false,
+    "headers": {
+      "Test": "redirective-response-header",
+      "Connection": "keep-alive",
+      "Content-Type": "text/html; charset=UTF-8",
+      "Date": "Fri, 28 Dec 2018 18:32:22 GMT",
+      "Location": "http://step1.test",
+      "Server": "nginx/1.10.3 (Ubuntu)",
+      "Set-Cookie": "foo=bar; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test.com",
+      "Transfer-Encoding": "chunked"
+    },
+    "headersText": "HTTP/1.1 302 Found\r\nServer: nginx/1.10.3 (Ubuntu)\r\nDate: Fri, 28 Dec 2018 18:32:22 GMT\r\nContent-Type: text/html; charset=UTF-8\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\nSet-Cookie: foo=bar; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test.com\r\nLocation: http://step1.com\r\n\r\n",
+    "mimeType": "text/html",
+    "protocol": "http/1.1",
+    "remoteIPAddress": "104.248.96.70",
+    "remotePort": 80,
+    "requestHeaders": {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+      "Accept-Encoding": "gzip, deflate",
+      "Connection": "keep-alive",
+      "Host": "step0.com",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36"
+    },
+    "requestHeadersText": "GET / HTTP/1.1\r\nHost: step0.test\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3497.100 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate\r\n",
+    "securityState": "neutral",
+    "status": 302,
+    "statusText": "Found",
+    "timing": {
+      "connectEnd": 464.923,
+      "connectStart": 113.478,
+      "dnsEnd": 113.478,
+      "dnsStart": 0.105,
+      "proxyEnd": -1,
+      "proxyStart": -1,
+      "pushEnd": 0,
+      "pushStart": 0,
+      "receiveHeadersEnd": 1009.774,
+      "requestTime": 15875.097865,
+      "sendEnd": 465.061,
+      "sendStart": 464.998,
+      "sslEnd": -1,
+      "sslStart": -1,
+      "workerReady": -1,
+      "workerStart": -1
+    },
+    "url": "http://step0.test"
+  },
+  "request": {
+    "initialPriority": "VeryHigh",
+    "method": "GET",
+    "mixedContentType": "none",
+    "referrerPolicy": "no-referrer-when-downgrade",
+    "url": "http://step1.test"
   },
   "requestId": "E8DAACD689A021E0963DA6DDC3FC9AF9",
   "timestamp": 15876.109173,

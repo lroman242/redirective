@@ -32,10 +32,10 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 	}
 
 	// get list of open tabs
-	tabs, err := ct.instance.TabList("")
-	if err != nil {
-		return redirects, errors.New(fmt.Sprintf("TabList failed. %s", err))
-	}
+	//tabs, err := ct.instance.TabList("")
+	//if err != nil {
+	//	return redirects, errors.New(fmt.Sprintf("TabList failed. %s", err))
+	//}
 
 	ct.instance.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
 		if _, ok := params["redirectResponse"]; ok && params["type"] == "Document" {
@@ -47,7 +47,9 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 	tab, _ := ct.instance.NewTab("https://www.google.com")
 	defer func() {
 		err = ct.instance.CloseTab(tab)
-		log.Error(errors.New(fmt.Sprintf("CloseTab failed. %s", err)))
+		if err != nil {
+			log.Error(errors.New(fmt.Sprintf("CloseTab failed. %s", err)))
+		}
 	}()
 
 	// enable event processing
@@ -73,7 +75,7 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 	//}
 
 	// navigate in existing tab
-	err = ct.instance.ActivateTab(tabs[0])
+	err = ct.instance.ActivateTab(tab)
 	if err != nil {
 		return redirects, errors.New(fmt.Sprintf("ActivateTab failed. %s", err))
 	}

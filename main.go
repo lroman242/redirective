@@ -17,6 +17,8 @@ func main() {
 		fmt.Println("cannot connect to Chrome instance:", err)
 		return
 	}
+	defer remote.Close()
+
 	chr := tracer.NewChromeTracer(remote)
 
 	targetUrl, _ := url.Parse("https://www.google.com.ua")
