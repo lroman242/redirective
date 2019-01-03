@@ -198,7 +198,7 @@ func TestParseRedirectFromRaw5(t *testing.T) {
 	}
 }
 
-func TestParseRedirectFromRaw6(t *testing.T)  {
+func TestParseRedirectFromRaw6(t *testing.T) {
 	redirectParams := godet.Params{}
 	if err := json.Unmarshal([]byte(params6), &redirectParams); err != nil {
 		panic(err)
@@ -208,7 +208,7 @@ func TestParseRedirectFromRaw6(t *testing.T)  {
 		t.Errorf("Invalid redirect. redirectResponse param headers not exists")
 	}
 }
-func TestParseRedirectFromRaw7(t *testing.T)  {
+func TestParseRedirectFromRaw7(t *testing.T) {
 	redirectParams := godet.Params{}
 	if err := json.Unmarshal([]byte(params7), &redirectParams); err != nil {
 		panic(err)
@@ -219,7 +219,7 @@ func TestParseRedirectFromRaw7(t *testing.T)  {
 	}
 }
 
-func TestParseRedirectFromRaw8(t *testing.T)  {
+func TestParseRedirectFromRaw8(t *testing.T) {
 	redirectParams := godet.Params{}
 	if err := json.Unmarshal([]byte(params8), &redirectParams); err != nil {
 		panic(err)
@@ -230,7 +230,7 @@ func TestParseRedirectFromRaw8(t *testing.T)  {
 	}
 }
 
-const params1  = `
+const params1 = `
 {
   "documentURL": "http://step1.test",
   "frameId": "F394EA807250832376BE81745B17B0E9",
@@ -310,7 +310,7 @@ const params1  = `
   "wallTime": 1546021943.764962
 }`
 
-const params2  = `
+const params2 = `
 {
   "documentURL": "user@httpstep1test:ew?something#wron=here",
   "frameId": "F394EA807250832376BE81745B17B0E9",
@@ -390,7 +390,7 @@ const params2  = `
   "wallTime": 1546021943.764962
 }`
 
-const params3  = `
+const params3 = `
 {
   "documentURL": "http://step1.test",
   "frameId": "F394EA807250832376BE81745B17B0E9",
@@ -470,7 +470,7 @@ const params3  = `
   "wallTime": 1546021943.764962
 }`
 
-const params4  = `
+const params4 = `
 {
   "documentURL": "http://step1.test",
   "frameId": "F394EA807250832376BE81745B17B0E9",
@@ -497,7 +497,7 @@ const params4  = `
   "wallTime": 1546021943.764962
 }`
 
-const params5  = `
+const params5 = `
 {
   "documentURL": "http://step1.test",
   "frameId": "F394EA807250832376BE81745B17B0E9",
@@ -565,7 +565,7 @@ const params5  = `
   "wallTime": 1546021943.764962
 }`
 
-const params6  = `
+const params6 = `
 {
   "documentURL": "http://step1.test",
   "frameId": "F394EA807250832376BE81745B17B0E9",
@@ -634,7 +634,7 @@ const params6  = `
   "type": "Document",
   "wallTime": 1546021943.764962
 }`
-const params7  = `
+const params7 = `
 {
   "documentURL": "http://step1.test",
   "frameId": "F394EA807250832376BE81745B17B0E9",
@@ -713,7 +713,7 @@ const params7  = `
   "wallTime": 1546021943.764962
 }`
 
-const params8  = `
+const params8 = `
 {
   "documentURL": "http://step1.test",
   "frameId": "F394EA807250832376BE81745B17B0E9",
