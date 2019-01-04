@@ -47,8 +47,8 @@ func TestChromeTracer_GetTrace(t *testing.T) {
 	}
 
 	redirects, err := chr.GetTrace(traceUrl)
-	if err == nil || err.Error() != "No redirects found" {
-		t.Errorf("Expect error: No redirects found")
+	if err != nil  {
+		t.Error(err)
 	}
 
 	if len(redirects) != 0 {

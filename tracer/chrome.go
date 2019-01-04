@@ -31,12 +31,6 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 		return redirects, errors.New(fmt.Sprintf("EnableRequestInterception failed. %s", err))
 	}
 
-	// get list of open tabs
-	//tabs, err := ct.instance.TabList("")
-	//if err != nil {
-	//	return redirects, errors.New(fmt.Sprintf("TabList failed. %s", err))
-	//}
-
 	ct.instance.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
 		if _, ok := params["redirectResponse"]; ok && params["type"] == "Document" {
 			rawRedirects[params["frameId"].(string)] = append(rawRedirects[params["frameId"].(string)], params)
@@ -52,27 +46,10 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 		}
 	}()
 
-	// enable event processing
-	//err = ct.instance.RuntimeEvents(true)
-	//if err != nil {
-	//	return redirects, errors.New(fmt.Sprintf("RuntimeEvents failed. %s", err))
-	//}
 	err = ct.instance.NetworkEvents(true)
 	if err != nil {
 		return redirects, errors.New(fmt.Sprintf("NetworkEvents failed. %s", err))
 	}
-	//err = ct.instance.PageEvents(true)
-	//if err != nil {
-	//	return redirects, errors.New(fmt.Sprintf("PageEvents failed. %s", err))
-	//}
-	//err = ct.instance.DOMEvents(true)
-	//if err != nil {
-	//	return redirects, errors.New(fmt.Sprintf("DOMEvents failed. %s", err))
-	//}
-	//err = ct.instance.LogEvents(true)
-	//if err != nil {
-	//	return redirects, errors.New(fmt.Sprintf("LogEvents failed. %s", err))
-	//}
 
 	// navigate in existing tab
 	err = ct.instance.ActivateTab(tab)
@@ -94,7 +71,7 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 	time.Sleep(time.Duration(time.Second * 5))
 
 	if len(rawRedirects) == 0 {
-		return redirects, errors.New("No redirects found")
+		return redirects, nil
 	}
 
 	if frameId == "" {

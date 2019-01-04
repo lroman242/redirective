@@ -22,10 +22,12 @@ func (r *Response) Success(w http.ResponseWriter) {
 
 	jsonResponse, err := json.Marshal(r)
 	if err != nil {
-		log.Printf("Error while json decode: %q", err.Error())
+		log.Printf("Error while json encode: %q", err.Error())
 		r.StatusCode = http.StatusInternalServerError
-		r.Message = "Horrible error"
+		r.Message = "response data cannot be converted to json"
+		r.Data = nil
 		r.Failed(w)
+		return
 	}
 
 	w.WriteHeader(r.StatusCode)
@@ -42,7 +44,12 @@ func (r *Response) Failed(w http.ResponseWriter) {
 
 	jsonResponse, err := json.Marshal(r)
 	if err != nil {
-		log.Printf("Error while json dcode: %q", err.Error())
+		log.Printf("Error while json encode: %q", err.Error())
+		r.StatusCode = http.StatusInternalServerError
+		r.Message = "response data cannot be converted to json"
+		r.Data = nil
+		r.Failed(w)
+		return
 	}
 
 	w.WriteHeader(r.StatusCode)
