@@ -117,6 +117,56 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 	return redirects, nil
 }
 
+func (ct *chromeTracer) Screenshot(url *url.URL, size *screenSize, path string) error {
+	err := ct.instance.EnableRequestInterception(true)
+	if err != nil {
+		return errors.New(fmt.Sprintf("EnableRequestInterception failed. %s", err))
+	}
+
+	// create new tab
+	tab, _ := ct.instance.NewTab(url.String())
+	defer func() {
+		err = ct.instance.CloseTab(tab)
+		if err != nil {
+			log.Error(errors.New(fmt.Sprintf("CloseTab failed. %s", err)))
+		}
+	}()
+
+	// navigate in existing tab
+	err = ct.instance.ActivateTab(tab)
+	if err != nil {
+		return errors.New(fmt.Sprintf("ActivateTab failed. %s", err))
+	}
+
+	_, err = ct.instance.Navigate(url.String())
+	if err != nil {
+		return errors.New(fmt.Sprintf("Navigate failed. %s", err))
+	}
+
+	time.Sleep(time.Duration(time.Second * 5))
+
+	err = ct.instance.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Set screen size error: %s", err))
+	}
+
+	err = ct.instance.SetVisibleSize(size.Width, size.Height)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Set visibility size error: %s", err))
+	}
+
+	//TODO: full page screenshot
+
+	// take a screenshot
+	err = ct.instance.SaveScreenshot(path, 0644, 100, true)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Cannot capture screenshot: %s", err))
+	}
+	//time.Sleep(time.Second)
+
+	return nil
+}
+
 func parseRedirectFromRaw(rawRedirect godet.Params) (*redirect, error) {
 	if _, ok := rawRedirect["redirectResponse"]; !ok {
 		return nil, errors.New("Invalid redirect. redirectResponse param not exists")
@@ -177,3 +227,4 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*redirect, error) {
 func parseCookies(s string) []*http.Cookie {
 	return (&http.Response{Header: http.Header{"Set-Cookie": {s}}}).Cookies()
 }
+
