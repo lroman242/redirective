@@ -1,5 +1,5 @@
 ## TODO
-   - HTTP API
+   - Fix cookies parsing
    - WS API
    - tests [>= 80%]
    - add linter

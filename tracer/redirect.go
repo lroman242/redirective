@@ -58,7 +58,7 @@ func NewJSONRedirect(r *redirect) *jsonRedirect {
 		rRequestHeaders[k] = r.RequestHeaders.Get(k)
 	}
 	for k := range *r.ResponseHeaders {
-		rResponseHeaders[k] = r.RequestHeaders.Get(k)
+		rResponseHeaders[k] = r.ResponseHeaders.Get(k)
 	}
 
 	return &jsonRedirect{

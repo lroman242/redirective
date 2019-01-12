@@ -25,6 +25,7 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 	var redirects []*redirect
 
 	rawRedirects := make(map[string][]godet.Params)
+	rawResponses := make(map[string][]godet.Params)
 
 	err := ct.instance.EnableRequestInterception(true)
 	if err != nil {
@@ -34,6 +35,11 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 	ct.instance.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
 		if _, ok := params["redirectResponse"]; ok && params["type"] == "Document" {
 			rawRedirects[params["frameId"].(string)] = append(rawRedirects[params["frameId"].(string)], params)
+		}
+	})
+	ct.instance.CallbackEvent("Network.responseReceived", func(params godet.Params) {
+		if params["type"] == "Document" {
+			rawResponses[params["frameId"].(string)] = append(rawResponses[params["frameId"].(string)], params)
 		}
 	})
 
@@ -87,8 +93,20 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 
 			redirects = append(redirects, redirect)
 		}
-	} else {
+	}/* else {
 		return redirects, errors.New("No redirects found for mainframe")
+	}*/
+
+	if rawRespons, ok := rawResponses[frameId]; ok {
+		lastResponse := rawRespons[len(rawRespons) - 1]
+		response, err := pareseMainResponseFromRaw(lastResponse)
+		if err != nil {
+			return redirects, errors.New(fmt.Sprintf("An error during parsing response. %s", err))
+		}
+
+		redirects = append(redirects, response)
+	} else {
+		return redirects, errors.New("No responses found for mainframe")
 	}
 
 	return redirects, nil
@@ -174,8 +192,8 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*redirect, error) {
 	if _, ok := redirectResponse["headers"]; !ok {
 		return nil, errors.New("Invalid redirect. redirectResponse param headers not exists")
 	}
-	headers := redirectResponse["headers"].(map[string]interface{})
-	for index, header := range headers {
+	responseHeadersRaw := redirectResponse["headers"].(map[string]interface{})
+	for index, header := range responseHeadersRaw {
 		responseHeaders.Add(index, header.(string))
 		if index == "Set-Cookie" {
 			cookies = parseCookies(header.(string))
@@ -187,8 +205,8 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*redirect, error) {
 		return nil, errors.New("Invalid redirect. request param headers not exists")
 	}
 
-	headers = request["headers"].(map[string]interface{})
-	for index, header := range headers {
+	requestHeadersRaw := request["headers"].(map[string]interface{})
+	for index, header := range requestHeadersRaw {
 		requestHeaders.Add(index, header.(string))
 	}
 
@@ -205,3 +223,47 @@ func parseCookies(s string) []*http.Cookie {
 	return (&http.Response{Header: http.Header{"Set-Cookie": {s}}}).Cookies()
 }
 
+func pareseMainResponseFromRaw(rawResponses godet.Params) (*redirect, error) {
+	if _, ok := rawResponses["response"]; !ok {
+		return nil, errors.New("Invalid redirect. request param not exists")
+	}
+	response := rawResponses.Map("response")
+
+	if _, ok := response["url"]; !ok {
+		return nil, errors.New("Invalid redirect. redirectResponse param url not exists")
+	}
+
+	to, err := url.Parse(response["url"].(string))
+	if err != nil {
+		return nil, errors.New("Invalid redirect To url")
+	}
+
+	var cookies []*http.Cookie
+	responseHeaders := http.Header{}
+	if _, ok := response["headers"]; !ok {
+		return nil, errors.New("Invalid redirect. redirectResponse param headers not exists")
+	}
+	responseHeadersRaw := response["headers"].(map[string]interface{})
+	for index, header := range responseHeadersRaw {
+		responseHeaders.Add(index, header.(string))
+		if index == "Set-Cookie" {
+			cookies = parseCookies(header.(string))
+		}
+	}
+
+	requestHeaders := http.Header{}
+	if _, ok := response["requestHeaders"]; !ok {
+		return nil, errors.New("Invalid redirect. request param headers not exists")
+	}
+
+	requestHeadersRaw := response["requestHeaders"].(map[string]interface{})
+	for index, header := range requestHeadersRaw {
+		requestHeaders.Add(index, header.(string))
+	}
+
+	status := int(response["status"].(float64))
+
+	redirect := NewRedirect(&url.URL{}, to, &requestHeaders, &responseHeaders, cookies, status, "")
+
+	return redirect, nil
+}
