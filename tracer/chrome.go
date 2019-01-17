@@ -7,6 +7,7 @@ import (
 	"github.com/raff/godet"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -194,10 +195,10 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*redirect, error) {
 	}
 	responseHeadersRaw := redirectResponse["headers"].(map[string]interface{})
 	for index, header := range responseHeadersRaw {
-		responseHeaders.Add(index, header.(string))
-		if index == "Set-Cookie" {
+		if strings.ToLower(index) == "set-cookie" {
 			cookies = parseCookies(header.(string))
 		}
+		responseHeaders.Add(index, header.(string))
 	}
 
 	requestHeaders := http.Header{}
@@ -220,7 +221,18 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*redirect, error) {
 }
 
 func parseCookies(s string) []*http.Cookie {
-	return (&http.Response{Header: http.Header{"Set-Cookie": {s}}}).Cookies()
+	var cookies []*http.Cookie
+	rawCookies := strings.Split(s, "\n")
+	for _, rawCookie := range rawCookies {
+		parsedCookies := (&http.Response{Header: http.Header{"Set-Cookie": {rawCookie}}}).Cookies()
+		for _, parsedCookie := range parsedCookies {
+			cookies = append(cookies, parsedCookie)
+		}
+	}
+
+	//return (&http.Response{Header: http.Header{"Set-Cookie": {s}}}).Cookies()
+	return cookies
+
 }
 
 func pareseMainResponseFromRaw(rawResponses godet.Params) (*redirect, error) {
@@ -245,10 +257,10 @@ func pareseMainResponseFromRaw(rawResponses godet.Params) (*redirect, error) {
 	}
 	responseHeadersRaw := response["headers"].(map[string]interface{})
 	for index, header := range responseHeadersRaw {
-		responseHeaders.Add(index, header.(string))
-		if index == "Set-Cookie" {
+		if strings.ToLower(index) == "set-cookie" {
 			cookies = parseCookies(header.(string))
 		}
+		responseHeaders.Add(index, header.(string))
 	}
 
 	requestHeaders := http.Header{}
