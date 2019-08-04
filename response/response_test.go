@@ -256,7 +256,6 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 	}
 }
 
-
 func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
 	data := make(chan int)

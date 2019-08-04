@@ -145,7 +145,6 @@ func TestNewJSONRedirects(t *testing.T) {
 		t.Errorf("wrong Cookie[1] value. expect %s but get %s", redirects[0].Cookies[1].Raw, jsonRedirects[0].Cookies[1].Raw)
 	}
 
-
 	if jsonRedirects[1].Status != redirects[1].Status {
 		t.Errorf("wrong Status value. expect %d but get %d", redirects[1].Status, jsonRedirects[1].Status)
 	}

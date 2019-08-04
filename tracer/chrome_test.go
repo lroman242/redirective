@@ -47,7 +47,7 @@ func TestChromeTracer_GetTrace(t *testing.T) {
 	}
 
 	redirects, err := chr.GetTrace(traceUrl)
-	if err != nil  {
+	if err != nil {
 		t.Error(err)
 	}
 

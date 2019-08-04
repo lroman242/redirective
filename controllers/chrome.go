@@ -10,7 +10,7 @@ import (
 	"net/url"
 )
 
-func ChromeScreenshot(w http.ResponseWriter, r *http.Request)  {
+func ChromeScreenshot(w http.ResponseWriter, r *http.Request) {
 	// connect to Chrome instance
 	remote, err := godet.Connect("localhost:9222", false)
 	if err != nil {
@@ -45,7 +45,7 @@ func ChromeScreenshot(w http.ResponseWriter, r *http.Request)  {
 	//TODO: unique image name
 	//TODO: custom screen size
 	screenShotPath := "assets/screenshots/test.png"
-	err = chr.Screenshot(targetUrl, tracer.NewScreenSize(1920,1080), screenShotPath)
+	err = chr.Screenshot(targetUrl, tracer.NewScreenSize(1920, 1080), screenShotPath)
 	if err != nil {
 		(&response.Response{false, fmt.Sprintf("an error occurred. %s", err), 500, nil}).Failed(w)
 		return

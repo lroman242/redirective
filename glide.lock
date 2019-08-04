@@ -1,8 +1,6 @@
-hash: f307452cb8c7511cb4a422c6a88f3ec1f9d8b077904911168b65e70b63c660cb
-updated: 2018-12-22T11:50:34.765853188+02:00
+hash: ef269581b1ed0478201ece87fab1c8e2099f32dd5bcb3b1f077070bf19f908a3
+updated: 2019-08-04T22:58:45.485327929+03:00
 imports:
-- name: github.com/benbjohnson/phantomjs
-  version: 6499a20f5cd6e4264994b4d95e49b6f21aafef79
 - name: github.com/gobs/httpclient
   version: 65d9a923593893b46316c270c3f15a94f80cca35
 - name: github.com/gobs/pretty
@@ -47,6 +45,8 @@ imports:
   - log
 - name: github.com/raff/godet
   version: 7f5db8f2b8ab95373b0327aa39b63e5542644bc8
+- name: github.com/rs/cors
+  version: 9a47f48565a795472d43519dd49aac781f3034fb
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/whyrusleeping/go-logging

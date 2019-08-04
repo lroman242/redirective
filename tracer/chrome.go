@@ -1,9 +1,10 @@
 package tracer
 
 import (
+	"errors"
 	"fmt"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
+	//"github.com/pkg/errors"
 	"github.com/raff/godet"
 	"net/http"
 	"net/url"
@@ -94,12 +95,12 @@ func (ct *chromeTracer) GetTrace(url *url.URL) ([]*redirect, error) {
 
 			redirects = append(redirects, redirect)
 		}
-	}/* else {
+	} /* else {
 		return redirects, errors.New("No redirects found for mainframe")
 	}*/
 
 	if rawRespons, ok := rawResponses[frameId]; ok {
-		lastResponse := rawRespons[len(rawRespons) - 1]
+		lastResponse := rawRespons[len(rawRespons)-1]
 		response, err := pareseMainResponseFromRaw(lastResponse)
 		if err != nil {
 			return redirects, errors.New(fmt.Sprintf("An error during parsing response. %s", err))

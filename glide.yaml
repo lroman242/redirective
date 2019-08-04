@@ -5,3 +5,5 @@ import:
 - package: github.com/raff/godet
 - package: github.com/gorilla/websocket
   version: ~1.4.0
+- package: github.com/rs/cors
+  version: ~1.6.0
