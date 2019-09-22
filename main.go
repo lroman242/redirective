@@ -61,6 +61,11 @@ func main() {
 		if err != nil {
 			log.Printf("ListenAndServe error: %s", err)
 		}
+		//TODO: dynamic host + certs
+		err = http.ListenAndServeTLS(":8083", "/etc/letsencrypt/live/redirective.net/fullchain.pem", "/etc/letsencrypt/live/redirective.net/privkey.pem", handler)
+		if err != nil {
+			log.Printf("ListenAndServeTLS error: %s", err)
+		}
 	}()
 
 	// awaiting to exit signal
