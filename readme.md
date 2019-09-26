@@ -63,3 +63,10 @@ If you want to test work in headless mode you can do:
 
 and check the output picture
 
+### Create service (ubuntu)
+
+- create file `/etc/systemd/system/redirective.service` with content from `service.example` file
+- change `ExecStart` value to executive file path
+- create config file `/etc/rsyslog.d/redirective.conf` with content from `service_log.example` file (log file path `/var/log/redirective.log`)
+- restart rsyslog by running `sudo service rsyslog restart` command
+- start **redirective** service by running `sudo service redirective start` command

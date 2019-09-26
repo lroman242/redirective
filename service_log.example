@@ -1,0 +1,1 @@
+if $programname == 'redirective' then /var/log/redirective.log
