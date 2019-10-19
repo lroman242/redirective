@@ -1,0 +1,63 @@
+image: golang:1.12.11
+#image: mkenney/chromium-headless:latest
+
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
+
+before_script:
+  - apt-get update
+  - apt-get -u dist-upgrade
+  - apt-get install -y libappindicator1 fonts-liberation libappindicator3-1 libasound2 libatk-bridge2.0-0 libatspi2.0-0 libgtk-3-0 libnspr4 libnss3 libx11-xcb1 libxss1 libxtst6 lsb-release xdg-utils
+  - apt-get -y install dbus-x11 xfonts-base xfonts-100dpi xfonts-75dpi xfonts-cyrillic xfonts-scalable
+  - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+  - dpkg -i google-chrome*.deb
+  - apt-get -f install
+  - dpkg --configure -a
+  - apt-get install -y software-properties-common
+  - curl https://glide.sh/get | sh
+  #  - '/usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox'
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+  - mkdir -p ~/.ssh
+  - eval $(ssh-agent -s)
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  - mkdir -p /go/src/github.com/lroman242 /go/src/_/builds
+  - cp -r $CI_PROJECT_DIR /go/src/github.com/lroman242/redirective
+  - ln -s /go/src/github.com/lroman242 /go/src/_/builds/redirective
+  - cd /go/src/github.com/lroman242/redirective
+  - glide install
+  - go get ./...
+
+stages:
+  - build
+  - tests
+  - deploy
+
+tests:
+  stage: tests
+  script:
+    #install google chrome headless
+    - go test ./...
+
+build:
+  stage: build
+  script:
+    - go build -o redirective .
+
+deploy:
+  stage: deploy
+  artifacts:
+    paths:
+      - ./redirective
+  only:
+    - master
+  script:
+    - ssh-add <(echo "$REDIRECTIVE_PRIVATE_KEY")
+    - ssh -p22 gitlab@165.22.16.172 "mkdir /var/www/_tmp_service"
+    - scp -P22 ./redirective gitlab@165.22.16.172:/var/www/_tmp_service
+    - ssh -p22 gitlab@165.22.16.172 "mv /var/www/redirective_service /var/www/_old_service && mv /var/www/_tmp_service /var/www/redirective_service"
+#    - ssh -p22 gitlab@165.22.16.172 "rm -rf /var/www/_old"
