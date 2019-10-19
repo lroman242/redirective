@@ -27,7 +27,7 @@ func main() {
 	defer func() {
 		log.Printf("killing google-chrom PID %d\n", cmd.Process.Pid)
 		// Kill chrome:
-		if err := cmd.Process.Kill(); err != nil {
+		if err = cmd.Process.Kill(); err != nil {
 			log.Fatal("failed to kill process: ", err)
 		}
 	}()

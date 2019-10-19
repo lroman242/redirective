@@ -1,0 +1,3 @@
+.PHONY: lint
+lint:
+	golangci-lint --exclude-use-default=false --out-format tab run ./...
