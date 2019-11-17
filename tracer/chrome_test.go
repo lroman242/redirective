@@ -2,10 +2,42 @@ package tracer
 
 import (
 	"encoding/json"
-	"github.com/raff/godet"
+	"log"
+	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
 	"testing"
+	"time"
+
+	"github.com/raff/godet"
 )
+
+func TestMain(m *testing.M) {
+	cmd := exec.Command("/usr/bin/google-chrome", "--addr=localhost", "--port=9222", "--remote-debugging-port=9222", "--remote-debugging-address=0.0.0.0", "--disable-extensions", "--disable-gpu", "--headless", "--hide-scrollbars", "--no-first-run", "--no-sandbox")
+
+	cmd.Stdout = os.Stdout
+
+	err := cmd.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("google-chrome headless runned with PID: %d\n", cmd.Process.Pid)
+	log.Println("google-chrome headless runned on 9222 port")
+
+	time.Sleep(1 * time.Second)
+
+	code := m.Run()
+
+	log.Printf("killing google-chrom PID %d\n", cmd.Process.Pid)
+	// Kill chrome:
+	if err := cmd.Process.Kill(); err != nil {
+		log.Fatal("failed to kill process: ", err)
+	}
+
+	os.Exit(code)
+}
 
 func TestNewChromeTracer(t *testing.T) {
 	// connect to Chrome instance
@@ -34,6 +66,7 @@ func TestChromeTracer_GetTrace(t *testing.T) {
 		t.Fatalf("cannot connect to Chrome instance: %s", err)
 		return
 	}
+
 	defer remote.Close()
 
 	chr := NewChromeTracer(remote)
@@ -41,12 +74,13 @@ func TestChromeTracer_GetTrace(t *testing.T) {
 	if chr.instance != remote {
 		t.Error("wrong remote debuger instance")
 	}
-	traceUrl, err := url.Parse("https://www.google.com.ua")
+
+	traceURL, err := url.Parse("https://www.google.com.ua")
 	if err != nil {
 		t.Error(err)
 	}
 
-	redirects, err := chr.GetTrace(traceUrl)
+	redirects, err := chr.GetTrace(traceURL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -63,6 +97,7 @@ func TestChromeTracer_GetTrace2(t *testing.T) {
 		t.Fatalf("cannot connect to Chrome instance: %s", err)
 		return
 	}
+
 	defer remote.Close()
 
 	chr := NewChromeTracer(remote)
@@ -71,18 +106,19 @@ func TestChromeTracer_GetTrace2(t *testing.T) {
 		t.Error("wrong remote debuger instance")
 	}
 
-	traceUrl, err := url.Parse("http://google.com")
+	traceURL, err := url.Parse("http://google.com")
 	if err != nil {
 		t.Error(err)
 	}
 
-	redirects, err := chr.GetTrace(traceUrl)
+	redirects, err := chr.GetTrace(traceURL)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(redirects) != 2 {
+	if len(redirects) != 3 {
 		t.Errorf("Two redirects expected but get %d", len(redirects))
+
 		for _, redir := range redirects {
 			t.Errorf("From %s -> To %s", redir.From.String(), redir.To.String())
 		}
@@ -90,29 +126,43 @@ func TestChromeTracer_GetTrace2(t *testing.T) {
 }
 
 func TestParseCookies(t *testing.T) {
+	expectCookie := http.Cookie{
+		Name:       "foo",
+		Value:      "bar",
+		Domain:     "test.com",
+		MaxAge:     259200,
+		RawExpires: "Mon, 31-Dec-2055 23:59:59 GMT",
+		Path:       "/test",
+	}
 	rawCookie := "foo=bar; expires=Mon, 31-Dec-2055 23:59:59 GMT; Max-Age=259200; domain=test.com; Path=/test"
 	cookies := parseCookies(rawCookie)
 
-	if cookies[0].Value != "bar" {
-		t.Errorf("invalid cookie Value. expect %s but get %s", "bar", cookies[0].Value)
+	if cookies[0].Value != expectCookie.Value {
+		t.Errorf("invalid cookie Value. expect %s but get %s", expectCookie.Value, cookies[0].Value)
 	}
-	if cookies[0].Name != "foo" {
-		t.Errorf("invalid cookie Name. expect %s but get %s", "foo", cookies[0].Name)
+
+	if cookies[0].Name != expectCookie.Name {
+		t.Errorf("invalid cookie Name. expect %s but get %s", expectCookie.Name, cookies[0].Name)
 	}
-	if cookies[0].Domain != "test.com" {
-		t.Errorf("invalid cookie Domain. expect %s but get %s", "test.com", cookies[0].Domain)
+
+	if cookies[0].Domain != expectCookie.Domain {
+		t.Errorf("invalid cookie Domain. expect %s but get %s", expectCookie.Domain, cookies[0].Domain)
 	}
-	if cookies[0].MaxAge != 259200 {
-		t.Errorf("invalid cookie MaxAge. expect %d but get %d", 259200, cookies[0].MaxAge)
+
+	if cookies[0].MaxAge != expectCookie.MaxAge {
+		t.Errorf("invalid cookie MaxAge. expect %d but get %d", expectCookie.MaxAge, cookies[0].MaxAge)
 	}
+
 	if cookies[0].RawExpires != "Mon, 31-Dec-2055 23:59:59 GMT" {
-		t.Errorf("invalid cookie RawExpires. expect %s but get %s", "Mon, 31-Dec-2055 23:59:59 GMT", cookies[0].RawExpires)
+		t.Errorf("invalid cookie RawExpires. expect %s but get %s", expectCookie.RawExpires, cookies[0].RawExpires)
 	}
+
 	if cookies[0].Raw != rawCookie {
 		t.Errorf("invalid cookie Raw. expect %s but get %s", rawCookie, cookies[0].Raw)
 	}
-	if cookies[0].Path != "/test" {
-		t.Errorf("invalid cookie Path. expect %s but get %s", "/test", cookies[0].Path)
+
+	if cookies[0].Path != expectCookie.Path {
+		t.Errorf("invalid cookie Path. expect %s but get %s", expectCookie.Path, cookies[0].Path)
 	}
 }
 
@@ -131,24 +181,31 @@ func TestParseRedirectFromRaw1(t *testing.T) {
 	if redirect.To.String() != "http://step1.test" {
 		t.Errorf("invalid redirect To param. expect %s but get %s", "http://step1.test", redirect.To.String())
 	}
+
 	if redirect.From.String() != "http://step0.test" {
 		t.Errorf("invalid redirect From param. expect %s but get %s", "http://step0.test", redirect.From.String())
 	}
+
 	if redirect.Status != 302 {
 		t.Errorf("invalid redirect To param. expect %d but get %d", 302, redirect.Status)
 	}
+
 	if redirect.Initiator != "other" {
 		t.Errorf("invalid redirect Initiator param. expect %s but get %s", "other", redirect.Initiator)
 	}
+
 	if redirect.RequestHeaders.Get("Test") != "redirective-request-header" {
 		t.Errorf("invalid redirect RequestHeader param. expect %s but get %s", "redirective-request-header", redirect.RequestHeaders.Get("Test"))
 	}
+
 	if redirect.ResponseHeaders.Get("Test") != "redirective-response-header" {
 		t.Errorf("invalid redirect ResponseHeaders param. expect %s but get %s", "redirective-response-header", redirect.ResponseHeaders.Get("Test"))
 	}
+
 	if len(redirect.Cookies) != 1 {
 		t.Errorf("invalid redirect Cookies amount. expect %d but get %d", 1, len(redirect.Cookies))
 	}
+
 	if redirect.Cookies[0].Value != "bar" || redirect.Cookies[0].Name != "foo" || redirect.Cookies[0].Raw != "foo=bar; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test.com" {
 		t.Error("invalid redirect Cookies values")
 	}
@@ -159,6 +216,7 @@ func TestParseRedirectFromRaw2(t *testing.T) {
 	if err := json.Unmarshal([]byte(params2), &redirectParams); err != nil {
 		panic(err)
 	}
+
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect To url" {
 		t.Errorf("Expect error: Invalid redirect To url")
@@ -170,6 +228,7 @@ func TestParseRedirectFromRaw3(t *testing.T) {
 	if err := json.Unmarshal([]byte(params3), &redirectParams); err != nil {
 		panic(err)
 	}
+
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect From url" {
 		t.Errorf("Expect error: Invalid redirect From url")
@@ -181,6 +240,7 @@ func TestParseRedirectFromRaw4(t *testing.T) {
 	if err := json.Unmarshal([]byte(params4), &redirectParams); err != nil {
 		panic(err)
 	}
+
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect. redirectResponse param not exists" {
 		t.Errorf("Expect error: Invalid redirect. redirectResponse param not exists")
@@ -192,6 +252,7 @@ func TestParseRedirectFromRaw5(t *testing.T) {
 	if err := json.Unmarshal([]byte(params5), &redirectParams); err != nil {
 		panic(err)
 	}
+
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect. request param not exists" {
 		t.Errorf("Expect error: Invalid redirect. request param not exists")
@@ -203,6 +264,7 @@ func TestParseRedirectFromRaw6(t *testing.T) {
 	if err := json.Unmarshal([]byte(params6), &redirectParams); err != nil {
 		panic(err)
 	}
+
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect. redirectResponse param headers not exists" {
 		t.Errorf("Invalid redirect. redirectResponse param headers not exists")
@@ -213,6 +275,7 @@ func TestParseRedirectFromRaw7(t *testing.T) {
 	if err := json.Unmarshal([]byte(params7), &redirectParams); err != nil {
 		panic(err)
 	}
+
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect. redirectResponse param url not exists" {
 		t.Errorf("Expect error: Invalid redirect. redirectResponse param url not exists")
@@ -224,6 +287,7 @@ func TestParseRedirectFromRaw8(t *testing.T) {
 	if err := json.Unmarshal([]byte(params8), &redirectParams); err != nil {
 		panic(err)
 	}
+
 	_, err := parseRedirectFromRaw(redirectParams)
 	if err == nil || err.Error() != "Invalid redirect. request param headers not exists" {
 		t.Errorf("Expect error: Invalid redirect. request param headers not exists")

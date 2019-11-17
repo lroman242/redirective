@@ -1,59 +1,22 @@
-hash: ef269581b1ed0478201ece87fab1c8e2099f32dd5bcb3b1f077070bf19f908a3
-updated: 2019-08-04T22:58:45.485327929+03:00
+hash: ee5dfb046e12d2777a59bd1055c550f19ab8dc97da55e5c86f4d7d2c581036fb
+updated: 2019-11-17T06:54:27.290966432+02:00
 imports:
 - name: github.com/gobs/httpclient
-  version: 65d9a923593893b46316c270c3f15a94f80cca35
+  version: 52552a898fc4df05e0e1aa65a03128cfa496e89c
 - name: github.com/gobs/pretty
   version: 09732c25a95b8e10e85177a3201cf4c7fe35a377
 - name: github.com/gobs/simplejson
   version: c70e6bd5e26b37fd37b5225d00d600b93d348e58
-- name: github.com/gogo/protobuf
-  version: 4cbf7e384e768b4e01799441fdf2a706a5635ae7
-  subpackages:
-  - proto
 - name: github.com/gorilla/websocket
-  version: 66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d
-- name: github.com/gxed/eventfd
-  version: 80a92cca79a8041496ccc9dd773fcb52a57ec6f9
-- name: github.com/gxed/GoEndian
-  version: 0f5c6873267e5abf306ffcdfcfa4bf77517ef4a7
-- name: github.com/ipfs/go-log
-  version: de9a213953d6ec0e053b56e9d79800565c3fc9ca
-  subpackages:
-  - tracer
-  - tracer/wire
-  - writer
-- name: github.com/jbenet/go-reuseport
-  version: 8cfd5f2973c8e2476813120b9a516d9a82eb7c7a
-- name: github.com/libp2p/go-reuseport
-  version: 8cfd5f2973c8e2476813120b9a516d9a82eb7c7a
-  subpackages:
-  - poll
-  - singlepoll
-- name: github.com/libp2p/go-sockaddr
-  version: a7494d4eefeb607c8bc491cf8850a6e8dbd41cab
-  subpackages:
-  - net
-- name: github.com/mattn/go-colorable
-  version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
-- name: github.com/mattn/go-isatty
-  version: 3fb116b820352b7f0c281308a4d6250c22d94e27
+  version: c3e18be99d19e6b3e8f1559eea2c161a665c4b6b
 - name: github.com/opentracing/opentracing-go
-  version: 8b5a441dc60e8d9bb9bf9d22060b6d94fa599983
+  version: a7454ce5950e83caac9774ef32cc8979e5975f30
   subpackages:
-  - ext
   - log
 - name: github.com/raff/godet
-  version: 7f5db8f2b8ab95373b0327aa39b63e5542644bc8
+  version: 29652e04000eb16b51ec593817162819a4f635d5
 - name: github.com/rs/cors
   version: 9a47f48565a795472d43519dd49aac781f3034fb
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
-- name: github.com/whyrusleeping/go-logging
-  version: 0457bb6b88fc1973573aaf6b5145d8d3ae972390
-- name: golang.org/x/sys
-  version: b4a75ba826a64a70990f11a225237acd6ef35c9f
-  subpackages:
-  - unix
-  - windows
 testImports: []

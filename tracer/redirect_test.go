@@ -1,6 +1,7 @@
 package tracer
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -17,7 +18,7 @@ func TestNewRedirect(t *testing.T) {
 	responseHeaders := &http.Header{}
 	responseHeaders.Set("responseTestKey", "responseTestVal1")
 
-	cookies := []*http.Cookie{&http.Cookie{
+	cookies := []*http.Cookie{{
 		Name:     "testCookie",
 		Domain:   "google.com",
 		Expires:  time.Now(),
@@ -28,14 +29,10 @@ func TestNewRedirect(t *testing.T) {
 		Value:    "testCookieValue",
 	}}
 
-	//body := []byte("test body")
-
 	status := http.StatusFound
-
 	initiator := "test script"
 
 	redirect := NewRedirect(from, to, requestHeaders, responseHeaders, cookies /*body,*/, status, initiator)
-
 	if redirect.Status != status {
 		t.Error("Invalid status on redirect creating")
 	}
@@ -48,10 +45,6 @@ func TestNewRedirect(t *testing.T) {
 		t.Error("Invalid To URL on redirect creating")
 	}
 
-	//if string(redirect.Body) != string(body) {
-	//	t.Error("Invalid Body on redirect creating")
-	//}
-
 	if redirect.Initiator != initiator {
 		t.Error("Invalid Initiator on redirect creating")
 	}
@@ -63,6 +56,7 @@ func TestNewRedirect(t *testing.T) {
 	if cookie := redirect.Cookies[0]; cookie.Name != "testCookie" {
 		t.Error("Wrong Cookie name on redirect creating")
 	}
+
 	if cookie := redirect.Cookies[0]; cookie.Value != "testCookieValue" {
 		t.Error("Wrong Cookie value on redirect creating")
 	}
@@ -70,6 +64,7 @@ func TestNewRedirect(t *testing.T) {
 	if headerVal := redirect.RequestHeaders.Get("requestTestKey"); headerVal != "requestTestVal1" {
 		t.Errorf("Wrong Request header value. Expect %s but get %s", "requestTestVal1", headerVal)
 	}
+
 	if headerVal := redirect.ResponseHeaders.Get("responseTestKey"); headerVal != "responseTestVal1" {
 		t.Errorf("Wrong Response header value. Expect %s but get %s", "responseTestVal1", headerVal)
 	}
@@ -79,6 +74,7 @@ func TestNewJSONCookie(t *testing.T) {
 	header := http.Header{}
 	header.Add("Set-Cookie", "foo1=bar1; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test1.com; Path=/;")
 	header.Add("Set-Cookie", "foo2=bar2; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test2.com; Path=/;")
+
 	cookies := (&http.Response{Header: header}).Cookies()
 
 	jsonCookies := NewJSONCookies(cookies)
@@ -90,30 +86,17 @@ func TestNewJSONCookie(t *testing.T) {
 	if jsonCookies[0].Raw != cookies[0].Raw {
 		t.Error("Invalid 1st Cookie raw value")
 	}
+
 	if jsonCookies[1].Raw != cookies[1].Raw {
 		t.Error("Invalid 2nd Cookie raw value")
 	}
 }
 
 func TestNewJSONRedirects(t *testing.T) {
-	header1 := http.Header{}
-	header1.Add("Set-Cookie", "foo1=bar1; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test1.com; Path=/;")
-	header1.Add("Set-Cookie", "foo2=bar2; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test2.com; Path=/;")
-	cookies1 := (&http.Response{Header: header1}).Cookies()
-
-	header2 := http.Header{}
-	header2.Add("Set-Cookie", "foo3=bar3; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test3.com; Path=/;")
-	header2.Add("Set-Cookie", "foo4=bar4; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=test4.com; Path=/;")
-	cookies2 := (&http.Response{Header: header1}).Cookies()
-
-	var redirects []*redirect
-
-	fromUrl1, _ := url.ParseRequestURI("http://google.com")
-	toUrl1, _ := url.ParseRequestURI("https://google.com")
-	fromUrl2, _ := url.ParseRequestURI("https://google.com")
-	toUrl2, _ := url.ParseRequestURI("https://www.google.com")
-	redirects = append(redirects, NewRedirect(fromUrl1, toUrl1, &header1, &header2, cookies1, 303, "other"))
-	redirects = append(redirects, NewRedirect(fromUrl2, toUrl2, &header2, &header1, cookies2, 303, "other"))
+	redirects := []*Redirect{
+		makeTestRedirect("http://google.com", "https://google.com"),
+		makeTestRedirect("https://google.com", "https://www.google.com"),
+	}
 
 	jsonRedirects := NewJSONRedirects(redirects)
 
@@ -168,5 +151,21 @@ func TestNewJSONRedirects(t *testing.T) {
 	if jsonRedirects[1].Cookies[1].Raw != redirects[1].Cookies[1].Raw {
 		t.Errorf("wrong Cookie[1] value. expect %s but get %s", redirects[1].Cookies[1].Raw, jsonRedirects[1].Cookies[1].Raw)
 	}
+}
 
+func makeTestRedirect(from, to string) *Redirect {
+	requestHeaders := http.Header{}
+	requestHeaders.Add("Set-Cookie", fmt.Sprintf("foo1=bar1; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=%s; Path=/;", from))
+	requestHeaders.Add("Set-Cookie", fmt.Sprintf("foo2=bar2; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=%s; Path=/;", from))
+
+	responseHeaders := http.Header{}
+	responseHeaders.Add("Set-Cookie", fmt.Sprintf("foo3=bar3; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=%s; Path=/;", to))
+	responseHeaders.Add("Set-Cookie", fmt.Sprintf("foo4=bar4; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=%s; Path=/;", to))
+
+	cookies := (&http.Response{Header: responseHeaders}).Cookies()
+
+	fromURL, _ := url.ParseRequestURI(from)
+	toURL, _ := url.ParseRequestURI(to)
+
+	return NewRedirect(fromURL, toURL, &requestHeaders, &responseHeaders, cookies, 303, "other")
 }

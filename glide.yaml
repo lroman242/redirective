@@ -7,3 +7,6 @@ import:
   version: ~1.4.0
 - package: github.com/rs/cors
   version: ~1.6.0
+- package: github.com/opentracing/opentracing-go
+  subpackages:
+  - log

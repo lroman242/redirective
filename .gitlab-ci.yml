@@ -40,7 +40,6 @@ stages:
 tests:
   stage: tests
   script:
-    #install google chrome headless
     - go test ./...
 
 build:

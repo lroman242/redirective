@@ -8,6 +8,11 @@ import (
 	"testing"
 )
 
+const jsonMimeType = "application/json"
+const stringTestValue1 = "testVal1"
+const stringTestValue2 = "testVal2"
+const stringTestMessage = "Message"
+
 func TestResponse_Failed(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
 	response := &Response{}
@@ -18,7 +23,7 @@ func TestResponse_Failed(t *testing.T) {
 		t.Errorf("wrong response status code. expect %d but get %d", http.StatusNotFound, responseWriter.Code)
 	}
 
-	if responseWriter.Header().Get("Content-Type") != "application/json" {
+	if responseWriter.Header().Get("Content-Type") != jsonMimeType {
 		t.Error("wrong content-type header value")
 	}
 
@@ -55,7 +60,7 @@ func TestResponse_Failed(t *testing.T) {
 
 func TestResponse_Failed_With_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
-	response := &Response{true, "Message", http.StatusNotFound, []string{"test", "strings"}}
+	response := &Response{true, stringTestMessage, http.StatusNotFound, []string{stringTestValue1, stringTestValue2}}
 
 	response.Failed(responseWriter)
 
@@ -63,7 +68,7 @@ func TestResponse_Failed_With_Data(t *testing.T) {
 		t.Errorf("wrong response status code. expect %d but get %d", http.StatusNotFound, responseWriter.Code)
 	}
 
-	if responseWriter.Header().Get("Content-Type") != "application/json" {
+	if responseWriter.Header().Get("Content-Type") != jsonMimeType {
 		t.Error("wrong content-type header value")
 	}
 
@@ -83,29 +88,21 @@ func TestResponse_Failed_With_Data(t *testing.T) {
 
 	if unmarshalResponse.Status != false {
 		t.Error("expect Response.Status equal to false")
-	}
-
-	if unmarshalResponse.Message != "Message" {
-		t.Error("expect Response.Message equal to `Message`")
-	}
-
-	if unmarshalResponse.StatusCode != http.StatusNotFound {
+	} else if unmarshalResponse.Message != stringTestMessage {
+		t.Errorf("expect Response.Message equal to `%s`", stringTestMessage)
+	} else if unmarshalResponse.StatusCode != http.StatusNotFound {
 		t.Error("expect Response.StatusCode equal to 404")
-	}
-
-	if unmarshalResponse.Data == nil {
+	} else if unmarshalResponse.Data == nil {
 		t.Error("expect Response.Data not equal to nil")
 	}
 
 	interfaceData := unmarshalResponse.Data.([]interface{})
 	if len(interfaceData) != 2 {
 		t.Error("expect Response.Data contains 2 elements")
-	}
-	if interfaceData[0].(string) != "test" {
-		t.Error("expect Response.Data[0] equal to `test`")
-	}
-	if interfaceData[1].(string) != "strings" {
-		t.Error("expect Response.Data[1] equal to `strings`")
+	} else if interfaceData[0].(string) != stringTestValue1 {
+		t.Errorf("expect Response.Data[0] equal to `%s`", stringTestValue1)
+	} else if interfaceData[1].(string) != stringTestValue2 {
+		t.Errorf("expect Response.Data[1] equal to `%s`", stringTestValue2)
 	}
 }
 
@@ -119,7 +116,7 @@ func TestResponse_Success(t *testing.T) {
 		t.Errorf("wrong response status code. expect %d but get %d", http.StatusOK, responseWriter.Code)
 	}
 
-	if responseWriter.Header().Get("Content-Type") != "application/json" {
+	if responseWriter.Header().Get("Content-Type") != jsonMimeType {
 		t.Error("wrong content-type header value")
 	}
 
@@ -156,7 +153,7 @@ func TestResponse_Success(t *testing.T) {
 
 func TestResponse_Success_With_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
-	response := &Response{false, "SuccessMessage", http.StatusAccepted, []string{"success", "strings"}}
+	response := &Response{false, stringTestMessage, http.StatusAccepted, []string{stringTestValue1, stringTestValue2}}
 
 	response.Success(responseWriter)
 
@@ -164,7 +161,7 @@ func TestResponse_Success_With_Data(t *testing.T) {
 		t.Errorf("wrong response status code. expect %d but get %d", http.StatusAccepted, responseWriter.Code)
 	}
 
-	if responseWriter.Header().Get("Content-Type") != "application/json" {
+	if responseWriter.Header().Get("Content-Type") != jsonMimeType {
 		t.Error("wrong content-type header value")
 	}
 
@@ -186,8 +183,8 @@ func TestResponse_Success_With_Data(t *testing.T) {
 		t.Error("expect Response.Status equal to true")
 	}
 
-	if unmarshalResponse.Message != "SuccessMessage" {
-		t.Error("expect Response.Message equal to `SuccessMessage`")
+	if unmarshalResponse.Message != stringTestMessage {
+		t.Errorf("expect Response.Message equal to `%s`", stringTestMessage)
 	}
 
 	if unmarshalResponse.StatusCode != http.StatusAccepted {
@@ -201,19 +198,17 @@ func TestResponse_Success_With_Data(t *testing.T) {
 	interfaceData := unmarshalResponse.Data.([]interface{})
 	if len(interfaceData) != 2 {
 		t.Error("expect Response.Data contains 2 elements")
-	}
-	if interfaceData[0].(string) != "success" {
-		t.Error("expect Response.Data[0] equal to `success`")
-	}
-	if interfaceData[1].(string) != "strings" {
-		t.Error("expect Response.Data[1] equal to `strings`")
+	} else if interfaceData[0].(string) != stringTestValue1 {
+		t.Errorf("expect Response.Data[0] equal to `%s`", stringTestValue1)
+	} else if interfaceData[1].(string) != stringTestValue2 {
+		t.Errorf("expect Response.Data[1] equal to `%s`", stringTestValue2)
 	}
 }
 
 func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
 	data := make(chan int)
-	response := &Response{false, "SuccessMessage", http.StatusAccepted, data}
+	response := &Response{false, stringTestMessage, http.StatusAccepted, data}
 
 	response.Success(responseWriter)
 
@@ -221,7 +216,7 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 		t.Errorf("wrong response status code. expect %d but get %d", http.StatusInternalServerError, responseWriter.Code)
 	}
 
-	if responseWriter.Header().Get("Content-Type") != "application/json" {
+	if responseWriter.Header().Get("Content-Type") != jsonMimeType {
 		t.Error("wrong content-type header value")
 	}
 
@@ -243,8 +238,8 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 		t.Error("expect Response.Status equal to false")
 	}
 
-	if unmarshalResponse.Message != "response data cannot be converted to json" {
-		t.Error("expect Response.Message equal to `response data cannot be converted to json`")
+	if unmarshalResponse.Message != notConvertedToJSONErrorMessage {
+		t.Errorf("expect Response.Message equal to `%s`", notConvertedToJSONErrorMessage)
 	}
 
 	if unmarshalResponse.StatusCode != http.StatusInternalServerError {
@@ -259,7 +254,7 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
 	data := make(chan int)
-	response := &Response{true, "FailedMessage", http.StatusAccepted, data}
+	response := &Response{true, stringTestMessage, http.StatusAccepted, data}
 
 	response.Failed(responseWriter)
 
@@ -267,7 +262,7 @@ func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 		t.Errorf("wrong response status code. expect %d but get %d", http.StatusInternalServerError, responseWriter.Code)
 	}
 
-	if responseWriter.Header().Get("Content-Type") != "application/json" {
+	if responseWriter.Header().Get("Content-Type") != jsonMimeType {
 		t.Error("wrong content-type header value")
 	}
 
@@ -289,8 +284,8 @@ func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 		t.Error("expect Response.Status equal to false")
 	}
 
-	if unmarshalResponse.Message != "response data cannot be converted to json" {
-		t.Error("expect Response.Message equal to `response data cannot be converted to json`")
+	if unmarshalResponse.Message != notConvertedToJSONErrorMessage {
+		t.Errorf("expect Response.Message equal to `%s`", notConvertedToJSONErrorMessage)
 	}
 
 	if unmarshalResponse.StatusCode != http.StatusInternalServerError {

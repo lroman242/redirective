@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-type redirect struct {
+// Redirect type represent http redirect
+type Redirect struct {
 	From            *url.URL               `json:"from"`
 	To              *url.URL               `json:"to"`
 	RequestHeaders  *http.Header           `json:"request_headers"`
@@ -17,8 +18,10 @@ type redirect struct {
 	OtherInfo       map[string]interface{} `json:"other_info"`
 }
 
-func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header, cookies []*http.Cookie, status int, initiator string) *redirect {
-	return &redirect{
+// NewRedirect combine data from http request and response to create
+// new `Redirect` instance
+func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header, cookies []*http.Cookie, status int, initiator string) *Redirect {
+	return &Redirect{
 		From:            from,
 		To:              to,
 		RequestHeaders:  requestHeaders,
@@ -29,19 +32,22 @@ func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header
 	}
 }
 
-type jsonRedirect struct {
+// JSONRedirect used to transform Redirect type into json string
+type JSONRedirect struct {
 	From            string                 `json:"from"`
 	To              string                 `json:"to"`
 	RequestHeaders  map[string]string      `json:"request_headers"`
 	ResponseHeaders map[string]string      `json:"response_headers"`
-	Cookies         []*jsonCookie          `json:"cookies"`
+	Cookies         []*JSONCookie          `json:"cookies"`
 	Status          int                    `json:"status"`
 	Initiator       string                 `json:"initiator"`
 	OtherInfo       map[string]interface{} `json:"other_info"`
 }
 
-func NewJSONRedirects(redirects []*redirect) []*jsonRedirect {
-	var jsonRedirects []*jsonRedirect
+// NewJSONRedirects transform slice of `Redirect`s to slice of `jsonRedirect`s
+// using NewJSONRedirect function
+func NewJSONRedirects(redirects []*Redirect) []*JSONRedirect {
+	jsonRedirects := make([]*JSONRedirect, 0, len(redirects))
 
 	for _, r := range redirects {
 		jsonRedirects = append(jsonRedirects, NewJSONRedirect(r))
@@ -50,18 +56,20 @@ func NewJSONRedirects(redirects []*redirect) []*jsonRedirect {
 	return jsonRedirects
 }
 
-func NewJSONRedirect(r *redirect) *jsonRedirect {
+// NewJSONRedirect function process `Redirect` to create
+// `jsonRedirect` instance which can be marshaled to json
+func NewJSONRedirect(r *Redirect) *JSONRedirect {
 	rRequestHeaders := make(map[string]string)
-	rResponseHeaders := make(map[string]string)
-
 	for k := range *r.RequestHeaders {
 		rRequestHeaders[k] = r.RequestHeaders.Get(k)
 	}
+
+	rResponseHeaders := make(map[string]string)
 	for k := range *r.ResponseHeaders {
 		rResponseHeaders[k] = r.ResponseHeaders.Get(k)
 	}
 
-	return &jsonRedirect{
+	return &JSONRedirect{
 		From:            r.From.String(),
 		To:              r.To.String(),
 		RequestHeaders:  rRequestHeaders,
@@ -73,7 +81,8 @@ func NewJSONRedirect(r *redirect) *jsonRedirect {
 	}
 }
 
-type jsonCookie struct {
+// JSONCookie transform http.Cookie into json string
+type JSONCookie struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 
@@ -84,16 +93,18 @@ type jsonCookie struct {
 
 	// MaxAge=0 means no 'Max-Age' attribute specified.
 	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
-	// MaxAge>0 means Max-Age attribute present and given in seconds
+	// MaxA	ge>0 means Max-Age attribute present and given in seconds
 	MaxAge   int      `json:"max_age"`
 	Secure   bool     `json:"secure"`
-	HttpOnly bool     `json:"http_only"`
+	HTTPOnly bool     `json:"http_only"`
 	Raw      string   `json:"raw"`
 	Unparsed []string `json:"unparsed"` // Raw text of unparsed attribute-value pairs
 }
 
-func NewJSONCookies(cookies []*http.Cookie) []*jsonCookie {
-	var jsonCookies []*jsonCookie
+// NewJSONCookies convert slice of `http.Cookies` to the slice of `jsonCookies` type
+// using NewJSONCookie function
+func NewJSONCookies(cookies []*http.Cookie) []*JSONCookie {
+	jsonCookies := make([]*JSONCookie, 0, len(cookies))
 
 	for _, c := range cookies {
 		jsonCookies = append(jsonCookies, NewJSONCookie(c))
@@ -102,8 +113,10 @@ func NewJSONCookies(cookies []*http.Cookie) []*jsonCookie {
 	return jsonCookies
 }
 
-func NewJSONCookie(cookie *http.Cookie) *jsonCookie {
-	return &jsonCookie{
+// NewJSONCookie function is used to transform `http.Cookie` instance
+// to a `JSONCookie`, which contains custom json marshal rules
+func NewJSONCookie(cookie *http.Cookie) *JSONCookie {
+	return &JSONCookie{
 		Name:       cookie.Name,
 		Value:      cookie.Value,
 		Path:       cookie.Path,
@@ -112,7 +125,7 @@ func NewJSONCookie(cookie *http.Cookie) *jsonCookie {
 		RawExpires: cookie.RawExpires,
 		MaxAge:     cookie.MaxAge,
 		Secure:     cookie.Secure,
-		HttpOnly:   cookie.HttpOnly,
+		HTTPOnly:   cookie.HttpOnly,
 		Raw:        cookie.Raw,
 		Unparsed:   cookie.Unparsed,
 	}
