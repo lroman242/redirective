@@ -218,8 +218,13 @@ func TestParseRedirectFromRaw2(t *testing.T) {
 	}
 
 	_, err := parseRedirectFromRaw(redirectParams)
-	if err == nil || err.Error() != "Invalid redirect To url" {
-		t.Errorf("Expect error: Invalid redirect To url")
+
+	if err == nil {
+		t.Errorf("expect error: %s", errorMessageInvalidToURL)
+	}
+
+	if err.Error() != errorMessageInvalidToURL {
+		t.Errorf("expect error: %s but got %s", errorMessageInvalidToURL, err)
 	}
 }
 
@@ -230,8 +235,13 @@ func TestParseRedirectFromRaw3(t *testing.T) {
 	}
 
 	_, err := parseRedirectFromRaw(redirectParams)
-	if err == nil || err.Error() != "Invalid redirect From url" {
-		t.Errorf("Expect error: Invalid redirect From url")
+
+	if err == nil {
+		t.Errorf("expect error: %s", errorMessageInvalidFromURL)
+	}
+
+	if err.Error() != errorMessageInvalidFromURL {
+		t.Errorf("expect error: %s but got %s", errorMessageInvalidFromURL, err)
 	}
 }
 
@@ -242,8 +252,13 @@ func TestParseRedirectFromRaw4(t *testing.T) {
 	}
 
 	_, err := parseRedirectFromRaw(redirectParams)
-	if err == nil || err.Error() != "Invalid redirect. redirectResponse param not exists" {
-		t.Errorf("Expect error: Invalid redirect. redirectResponse param not exists")
+
+	if err == nil {
+		t.Errorf("expect error: %s", errorMessageRedirectResponseNotExists)
+	}
+
+	if err.Error() != errorMessageRedirectResponseNotExists {
+		t.Errorf("expect error: %s but got %s", errorMessageRedirectResponseNotExists, err)
 	}
 }
 
@@ -254,8 +269,13 @@ func TestParseRedirectFromRaw5(t *testing.T) {
 	}
 
 	_, err := parseRedirectFromRaw(redirectParams)
-	if err == nil || err.Error() != "Invalid redirect. request param not exists" {
-		t.Errorf("Expect error: Invalid redirect. request param not exists")
+
+	if err == nil {
+		t.Errorf("expect error: %s", errorMessageRequestNotExists)
+	}
+
+	if err.Error() != errorMessageRequestNotExists {
+		t.Errorf("expect error: %s but got %s", errorMessageRequestNotExists, err)
 	}
 }
 
@@ -266,8 +286,13 @@ func TestParseRedirectFromRaw6(t *testing.T) {
 	}
 
 	_, err := parseRedirectFromRaw(redirectParams)
-	if err == nil || err.Error() != "Invalid redirect. redirectResponse param headers not exists" {
-		t.Errorf("Invalid redirect. redirectResponse param headers not exists")
+
+	if err == nil {
+		t.Errorf("expect error: %s", errorMessageRedirectResponseParamHeadersNotExists)
+	}
+
+	if err.Error() != errorMessageRedirectResponseParamHeadersNotExists {
+		t.Errorf("expect error: %s but got %s", errorMessageRedirectResponseParamHeadersNotExists, err)
 	}
 }
 func TestParseRedirectFromRaw7(t *testing.T) {
@@ -277,8 +302,13 @@ func TestParseRedirectFromRaw7(t *testing.T) {
 	}
 
 	_, err := parseRedirectFromRaw(redirectParams)
-	if err == nil || err.Error() != "Invalid redirect. redirectResponse param url not exists" {
-		t.Errorf("Expect error: Invalid redirect. redirectResponse param url not exists")
+
+	if err == nil || err.Error() != errorMessageRedirectResponseParamURLNotExists {
+		t.Errorf("expect error: %s", errorMessageRedirectResponseParamURLNotExists)
+	}
+
+	if err.Error() != errorMessageRedirectResponseParamURLNotExists {
+		t.Errorf("expect error: %s but got %s", errorMessageRedirectResponseParamURLNotExists, err)
 	}
 }
 
@@ -289,8 +319,13 @@ func TestParseRedirectFromRaw8(t *testing.T) {
 	}
 
 	_, err := parseRedirectFromRaw(redirectParams)
-	if err == nil || err.Error() != "Invalid redirect. request param headers not exists" {
-		t.Errorf("Expect error: Invalid redirect. request param headers not exists")
+
+	if err == nil {
+		t.Errorf("Expect error: %s", errorMessageRequestParamHeadersNotExists)
+	}
+
+	if err.Error() != errorMessageRequestParamHeadersNotExists {
+		t.Errorf("Expect error: %s but got %s", errorMessageRequestParamHeadersNotExists, err)
 	}
 }
 

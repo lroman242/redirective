@@ -16,6 +16,19 @@ import (
 const setCookieHeaderName = "set-cookie"
 const documentParamName = "Document"
 
+const (
+	errorMessageInvalidMainFrameID                    = "invalid mainframe id"
+	errorMessageNoResponseFromMainFrame               = "no responses found for mainframe"
+	errorMessageRedirectResponseNotExists             = "invalid redirect. `redirectResponse` param not exists"
+	errorMessageRequestNotExists                      = "invalid redirect. `request` param not exists"
+	errorMessageInvalidToURL                          = "invalid redirect `To` url"
+	errorMessageInvalidFromURL                        = "invalid redirect `From` url"
+	errorMessageRedirectResponseParamURLNotExists     = "invalid redirect. `redirectResponse` param `url` not exists"
+	errorMessageRedirectResponseParamHeadersNotExists = "invalid redirect. `redirectResponse` param `headers` not exists"
+	errorMessageRequestParamHeadersNotExists          = "invalid redirect. request param `headers` not exists"
+	errorMessageResponseParamNotExists                = "invalid redirect. `response` param not exists"
+)
+
 // ChromeRemoteDebuggerInterface implements API to work with browser debugger
 type ChromeRemoteDebuggerInterface interface {
 	EnableRequestInterception(enabled bool) error
@@ -111,7 +124,7 @@ func (ct *ChromeTracer) GetTrace(url *url.URL) ([]*Redirect, error) {
 	}
 
 	if frameID == "" {
-		return redirects, errors.New("invalid mainframe id")
+		return redirects, errors.New(errorMessageInvalidMainFrameID)
 	}
 
 	if len(rawRedirects) == 0 {
@@ -139,7 +152,7 @@ func (ct *ChromeTracer) GetTrace(url *url.URL) ([]*Redirect, error) {
 
 		redirects = append(redirects, response)
 	} else {
-		return redirects, errors.New("no responses found for mainframe")
+		return redirects, errors.New(errorMessageNoResponseFromMainFrame)
 	}
 
 	return redirects, nil
@@ -196,11 +209,11 @@ func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, path string) 
 
 func parseRedirectFromRaw(rawRedirect godet.Params) (*Redirect, error) {
 	if _, ok := rawRedirect["redirectResponse"]; !ok {
-		return nil, errors.New("invalid redirect. `redirectResponse` param not exists")
+		return nil, errors.New(errorMessageRedirectResponseNotExists)
 	}
 
 	if _, ok := rawRedirect["request"]; !ok {
-		return nil, errors.New("invalid redirect. `request` param not exists")
+		return nil, errors.New(errorMessageRequestNotExists)
 	}
 
 	redirectResponse := rawRedirect.Map("redirectResponse")
@@ -208,20 +221,20 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*Redirect, error) {
 
 	to, err := url.Parse(rawRedirect.String("documentURL"))
 	if err != nil {
-		return nil, errors.New("invalid redirect `To` url")
+		return nil, errors.New(errorMessageInvalidToURL)
 	}
 
 	if _, ok := redirectResponse["url"]; !ok {
-		return nil, errors.New("invalid redirect. `redirectResponse` param `url` not exists")
+		return nil, errors.New(errorMessageRedirectResponseParamURLNotExists)
 	}
 
 	from, err := url.Parse(redirectResponse["url"].(string))
 	if err != nil {
-		return nil, errors.New("invalid redirect `From` url")
+		return nil, errors.New(errorMessageInvalidFromURL)
 	}
 
 	if _, ok := redirectResponse["headers"]; !ok {
-		return nil, errors.New("invalid redirect. `redirectResponse` param `headers` not exists")
+		return nil, errors.New(errorMessageRedirectResponseParamHeadersNotExists)
 	}
 
 	var cookies []*http.Cookie
@@ -254,7 +267,7 @@ func parseHeadersFromRaw(request map[string]interface{}) (*http.Header, error) {
 	requestHeaders := &http.Header{}
 
 	if _, ok := request["headers"]; !ok {
-		return requestHeaders, errors.New("invalid redirect. request param `headers` not exists")
+		return requestHeaders, errors.New(errorMessageRequestParamHeadersNotExists)
 	}
 
 	requestHeadersRaw := request["headers"].(map[string]interface{})
@@ -280,22 +293,22 @@ func parseCookies(s string) []*http.Cookie {
 
 func pareseMainResponseFromRaw(rawResponses godet.Params) (*Redirect, error) {
 	if _, ok := rawResponses["response"]; !ok {
-		return nil, errors.New("invalid redirect. `response` param not exists")
+		return nil, errors.New(errorMessageResponseParamNotExists)
 	}
 
 	response := rawResponses.Map("response")
 
 	if _, ok := response["url"]; !ok {
-		return nil, errors.New("invalid redirect. `redirectResponse` param `url` not exists")
+		return nil, errors.New(errorMessageRedirectResponseParamURLNotExists)
 	}
 
 	to, err := url.Parse(response["url"].(string))
 	if err != nil {
-		return nil, errors.New("invalid redirect `To` url")
+		return nil, errors.New(errorMessageInvalidToURL)
 	}
 
 	if _, ok := response["headers"]; !ok {
-		return nil, errors.New("invalid redirect. `redirectResponse` param `headers` not exists")
+		return nil, errors.New(errorMessageRedirectResponseParamHeadersNotExists)
 	}
 
 	var cookies []*http.Cookie
@@ -311,7 +324,7 @@ func pareseMainResponseFromRaw(rawResponses godet.Params) (*Redirect, error) {
 	}
 
 	if _, ok := response["requestHeaders"]; !ok {
-		return nil, errors.New("invalid redirect. request param `headers` not exists")
+		return nil, errors.New(errorMessageRequestParamHeadersNotExists)
 	}
 
 	requestHeaders := http.Header{}
