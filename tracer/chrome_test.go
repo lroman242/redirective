@@ -59,7 +59,7 @@ func TestNewChromeTracer(t *testing.T) {
 	}
 }
 
-func TestChromeTracer_GetTrace(t *testing.T) {
+func TestChromeTracer_Trace(t *testing.T) {
 	// connect to Chrome instance
 	remote, err := godet.Connect("localhost:9222", false)
 	if err != nil {
@@ -80,7 +80,7 @@ func TestChromeTracer_GetTrace(t *testing.T) {
 		t.Error(err)
 	}
 
-	redirects, err := chr.GetTrace(traceURL)
+	redirects, err := chr.Trace(traceURL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -90,7 +90,7 @@ func TestChromeTracer_GetTrace(t *testing.T) {
 	}
 }
 
-func TestChromeTracer_GetTrace2(t *testing.T) {
+func TestChromeTracer_Trace2(t *testing.T) {
 	// connect to Chrome instance
 	remote, err := godet.Connect("localhost:9222", false)
 	if err != nil {
@@ -111,7 +111,7 @@ func TestChromeTracer_GetTrace2(t *testing.T) {
 		t.Error(err)
 	}
 
-	redirects, err := chr.GetTrace(traceURL)
+	redirects, err := chr.Trace(traceURL)
 	if err != nil {
 		t.Error(err)
 	}

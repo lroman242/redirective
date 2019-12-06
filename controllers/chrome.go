@@ -133,7 +133,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// process tracing
-	redirects, err := chr.GetTrace(targetURL)
+	redirects, err := chr.Trace(targetURL)
 	if err != nil {
 		(&response.Response{
 			Status:     false,
@@ -187,5 +187,5 @@ func randomScreenshotFileName() string {
 		b[i] = charset[rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(charset))]
 	}
 
-	return string(b)
+	return string(b) + `.png`
 }

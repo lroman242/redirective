@@ -3,14 +3,13 @@ package tracer
 import (
 	"errors"
 	"fmt"
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/raff/godet"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/opentracing/opentracing-go/log"
-	"github.com/raff/godet"
 )
 
 const setCookieHeaderName = "set-cookie"
@@ -106,13 +105,11 @@ func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string]
 		return frameID, fmt.Errorf("`Navigate` failed. %s", err)
 	}
 
-	time.Sleep(time.Second * 5)
-
 	return frameID, nil
 }
 
-// GetTrace parse redirect trace path for provided url
-func (ct *ChromeTracer) GetTrace(url *url.URL) ([]*Redirect, error) {
+// Trace parse redirect trace path for provided url
+func (ct *ChromeTracer) Trace(url *url.URL) ([]*Redirect, error) {
 	var redirects []*Redirect
 
 	rawRedirects := make(map[string][]godet.Params)
@@ -180,13 +177,6 @@ func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, path string) 
 		return fmt.Errorf("`ActivateTab` failed. %s", err)
 	}
 
-	_, err = ct.instance.Navigate(url.String())
-	if err != nil {
-		return fmt.Errorf("`Navigate` failed. %s", err)
-	}
-
-	time.Sleep(time.Second * 5)
-
 	err = ct.instance.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
 	if err != nil {
 		return fmt.Errorf("set screen size error: %s", err)
@@ -196,6 +186,13 @@ func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, path string) 
 	if err != nil {
 		return fmt.Errorf("set visibility size error: %s", err)
 	}
+
+	_, err = ct.instance.Navigate(url.String())
+	if err != nil {
+		return fmt.Errorf("`Navigate` failed. %s", err)
+	}
+
+	time.Sleep(time.Second * 5)
 
 	// take a screenshot
 	err = ct.instance.SaveScreenshot(path, 0644, 100, true)
