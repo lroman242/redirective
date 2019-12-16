@@ -3,29 +3,31 @@ package tracer
 import (
 	"errors"
 	"fmt"
-	"github.com/opentracing/opentracing-go/log"
-	"github.com/raff/godet"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/raff/godet"
 )
 
 const setCookieHeaderName = "set-cookie"
 const documentParamName = "Document"
 
 const (
-	errorMessageInvalidMainFrameID                    = "invalid mainframe id"
-	errorMessageNoResponseFromMainFrame               = "no responses found for mainframe"
-	errorMessageRedirectResponseNotExists             = "invalid redirect. `redirectResponse` param not exists"
-	errorMessageRequestNotExists                      = "invalid redirect. `request` param not exists"
-	errorMessageInvalidToURL                          = "invalid redirect `To` url"
-	errorMessageInvalidFromURL                        = "invalid redirect `From` url"
-	errorMessageRedirectResponseParamURLNotExists     = "invalid redirect. `redirectResponse` param `url` not exists"
-	errorMessageRedirectResponseParamHeadersNotExists = "invalid redirect. `redirectResponse` param `headers` not exists"
-	errorMessageRequestParamHeadersNotExists          = "invalid redirect. request param `headers` not exists"
-	errorMessageResponseParamNotExists                = "invalid redirect. `response` param not exists"
+	errorMessageInvalidMainFrameID                      = "invalid mainframe id"
+	errorMessageNoResponseFromMainFrame                 = "no responses found for mainframe"
+	errorMessageRedirectResponseNotExists               = "invalid redirect. `redirectResponse` param not exists"
+	errorMessageRequestNotExists                        = "invalid redirect. `request` param not exists"
+	errorMessageInvalidToURL                            = "invalid redirect `To` url"
+	errorMessageInvalidFromURL                          = "invalid redirect `From` url"
+	errorMessageRedirectResponseParamURLNotExists       = "invalid redirect. `redirectResponse` param `url` not exists"
+	errorMessageRedirectResponseParamHeadersNotExists   = "invalid redirect. `redirectResponse` param `headers` not exists"
+	errorMessageRequestParamHeadersNotExists            = "invalid redirect. request param `headers` not exists"
+	errorMessageResponseParamNotExists                  = "invalid redirect. `response` param not exists"
+	errorMessageRedirectResponseParamInitiatorNotExists = "invalid redirect. `initiator` param not exists"
 )
 
 // ChromeRemoteDebuggerInterface implements API to work with browser debugger
@@ -253,11 +255,13 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*Redirect, error) {
 
 	status := int(redirectResponse["status"].(float64))
 
+	if _, ok := rawRedirect["initiator"]; !ok {
+		return nil, errors.New(errorMessageRedirectResponseParamInitiatorNotExists)
+	}
+
 	initiator := rawRedirect.Map("initiator")["type"].(string)
 
-	redirect := NewRedirect(from, to, requestHeaders, &responseHeaders, cookies, status, initiator)
-
-	return redirect, nil
+	return NewRedirect(from, to, requestHeaders, &responseHeaders, cookies, status, initiator), nil
 }
 
 func parseHeadersFromRaw(request map[string]interface{}) (*http.Header, error) {
