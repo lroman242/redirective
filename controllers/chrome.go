@@ -18,13 +18,11 @@ import (
 const defaultScreenWidth = 1920
 const defaultScreenHeight = 1080
 
-const screenshotsSavePath = "assets/screenshots/"
-
 const charset = "abcdefghijklmnopqrstuvwxyz" +
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 // ChromeScreenshot function create image (screenshot) of active browser tab
-func ChromeScreenshot(w http.ResponseWriter, r *http.Request) {
+func ChromeScreenshot(w http.ResponseWriter, r *http.Request, screenshotsStoragePath string) {
 	remote, err := godet.Connect("localhost:9222", false)
 	if err != nil {
 		(&response.Response{
@@ -43,7 +41,7 @@ func ChromeScreenshot(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	chr := tracer.NewChromeTracer(remote)
+	chr := tracer.NewChromeTracer(remote, parseScreenSizeFromRequest(r), screenshotsStoragePath)
 
 	urlToTrace := r.URL.Query().Get("url")
 	if urlToTrace == "" {
@@ -67,9 +65,9 @@ func ChromeScreenshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	screenShotPath := screenshotsSavePath + randomScreenshotFileName()
+	screenShotFileName := randomScreenshotFileName()
 
-	err = chr.Screenshot(targetURL, parseScreenSizeFromRequest(r), screenShotPath)
+	err = chr.Screenshot(targetURL, parseScreenSizeFromRequest(r), screenShotFileName)
 	if err != nil {
 		(&response.Response{
 			Status:     false,
@@ -84,11 +82,12 @@ func ChromeScreenshot(w http.ResponseWriter, r *http.Request) {
 		Status:     true,
 		Message:    "url successfully traced",
 		StatusCode: 200,
-		Data:       screenShotPath}).Success(w)
+		Data:       screenShotFileName}).Success(w)
 }
 
 // ChromeTrace parse a trace path for provided url
-func ChromeTrace(w http.ResponseWriter, r *http.Request) {
+func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath string) {
+	screenShotFileName := randomScreenshotFileName()
 	// connect to Chrome instance
 	remote, err := godet.Connect("localhost:9222", false)
 	if err != nil {
@@ -102,14 +101,12 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request) {
 	}
 	// close connection
 	defer func() {
-		err = remote.Close()
-		if err != nil {
+		if err = remote.Close(); err != nil {
 			log.Printf("remote.Close error: %s", err)
 		}
 	}()
-
 	// create new tracer instance
-	chr := tracer.NewChromeTracer(remote)
+	chr := tracer.NewChromeTracer(remote, parseScreenSizeFromRequest(r), screenshotsStoragePath)
 	// check url
 	urlToTrace := r.URL.Query().Get("url")
 	if urlToTrace == "" {
@@ -132,8 +129,9 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	// process tracing
-	redirects, err := chr.Trace(targetURL)
+	redirects, err := chr.Trace(targetURL, screenShotFileName)
 	if err != nil {
 		(&response.Response{
 			Status:     false,

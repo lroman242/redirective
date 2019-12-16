@@ -47,17 +47,21 @@ type ChromeRemoteDebuggerInterface interface {
 
 // ChromeTracer represent tracer based on google chrome debugging tools
 type ChromeTracer struct {
-	instance ChromeRemoteDebuggerInterface
+	instance               ChromeRemoteDebuggerInterface
+	size                   *ScreenSize
+	screenshotsStoragePath string
 }
 
 // NewChromeTracer create new chrome tracer instance
-func NewChromeTracer(chrome *godet.RemoteDebugger) *ChromeTracer {
+func NewChromeTracer(chrome *godet.RemoteDebugger, size *ScreenSize, screenshotsStoragePath string) *ChromeTracer {
 	return &ChromeTracer{
-		instance: chrome,
+		instance:               chrome,
+		size:                   size,
+		screenshotsStoragePath: screenshotsStoragePath,
 	}
 }
 
-func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string][]godet.Params) (string, error) {
+func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string][]godet.Params, fileName string) (string, error) {
 	frameID := ""
 
 	err := ct.instance.EnableRequestInterception(true)
@@ -102,22 +106,41 @@ func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string]
 		return frameID, fmt.Errorf("`AllEvents` failed. %s", err)
 	}
 
-	frameID, err = ct.instance.Navigate(url.String())
+	err = ct.instance.SetDeviceMetricsOverride(ct.size.Width, ct.size.Height, 0, false, false)
+	if err != nil {
+		return frameID, fmt.Errorf("set screen size error: %s", err)
+	}
+
+	err = ct.instance.SetVisibleSize(ct.size.Width, ct.size.Height)
+	if err != nil {
+		return frameID, fmt.Errorf("set visibility size error: %s", err)
+	}
+
+	_, err = ct.instance.Navigate(url.String())
 	if err != nil {
 		return frameID, fmt.Errorf("`Navigate` failed. %s", err)
+	}
+
+	time.Sleep(time.Second * 5)
+
+	// take a screenshot
+	err = ct.instance.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
+	if err != nil {
+		return frameID, fmt.Errorf("cannot capture screenshot: %s", err)
 	}
 
 	return frameID, nil
 }
 
 // Trace parse redirect trace path for provided url
-func (ct *ChromeTracer) Trace(url *url.URL) ([]*Redirect, error) {
+func (ct *ChromeTracer) Trace(url *url.URL, fileName string) ([]*Redirect, error) {
 	var redirects []*Redirect
 
 	rawRedirects := make(map[string][]godet.Params)
 	rawResponses := make(map[string][]godet.Params)
 
-	frameID, err := ct.traceURL(url, &rawRedirects, &rawResponses)
+	//FIXME: frameID always ""
+	frameID, err := ct.traceURL(url, &rawRedirects, &rawResponses, fileName)
 	if err != nil {
 		return redirects, err
 	}
@@ -149,6 +172,7 @@ func (ct *ChromeTracer) Trace(url *url.URL) ([]*Redirect, error) {
 			return redirects, fmt.Errorf("an error during parsing response. %s", err)
 		}
 
+		response.ScreenshotFileName = fileName
 		redirects = append(redirects, response)
 	} else {
 		return redirects, errors.New(errorMessageNoResponseFromMainFrame)
@@ -158,7 +182,7 @@ func (ct *ChromeTracer) Trace(url *url.URL) ([]*Redirect, error) {
 }
 
 // Screenshot function makes a final page screen capture
-func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, path string) error {
+func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, fileName string) error {
 	err := ct.instance.EnableRequestInterception(true)
 	if err != nil {
 		return fmt.Errorf("`EnableRequestInterception` failed. %s", err)
@@ -197,7 +221,7 @@ func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, path string) 
 	time.Sleep(time.Second * 5)
 
 	// take a screenshot
-	err = ct.instance.SaveScreenshot(path, 0644, 100, true)
+	err = ct.instance.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
 	if err != nil {
 		return fmt.Errorf("cannot capture screenshot: %s", err)
 	}

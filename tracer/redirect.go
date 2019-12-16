@@ -8,14 +8,15 @@ import (
 
 // Redirect type represent http redirect
 type Redirect struct {
-	From            *url.URL               `json:"from"`
-	To              *url.URL               `json:"to"`
-	RequestHeaders  *http.Header           `json:"request_headers"`
-	ResponseHeaders *http.Header           `json:"response_headers"`
-	Cookies         []*http.Cookie         `json:"cookies"`
-	Status          int                    `json:"status"`
-	Initiator       string                 `json:"initiator"`
-	OtherInfo       map[string]interface{} `json:"other_info"`
+	From               *url.URL               `json:"from"`
+	To                 *url.URL               `json:"to"`
+	RequestHeaders     *http.Header           `json:"request_headers"`
+	ResponseHeaders    *http.Header           `json:"response_headers"`
+	Cookies            []*http.Cookie         `json:"cookies"`
+	Status             int                    `json:"status"`
+	Initiator          string                 `json:"initiator"`
+	OtherInfo          map[string]interface{} `json:"other_info"`
+	ScreenshotFileName string                 `json:"screenshot,omitempty"`
 }
 
 // NewRedirect combine data from http request and response to create
@@ -34,14 +35,15 @@ func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header
 
 // JSONRedirect used to transform Redirect type into json string
 type JSONRedirect struct {
-	From            string                 `json:"from"`
-	To              string                 `json:"to"`
-	RequestHeaders  map[string]string      `json:"request_headers"`
-	ResponseHeaders map[string]string      `json:"response_headers"`
-	Cookies         []*JSONCookie          `json:"cookies"`
-	Status          int                    `json:"status"`
-	Initiator       string                 `json:"initiator"`
-	OtherInfo       map[string]interface{} `json:"other_info"`
+	From               string                 `json:"from"`
+	To                 string                 `json:"to"`
+	RequestHeaders     map[string]string      `json:"request_headers"`
+	ResponseHeaders    map[string]string      `json:"response_headers"`
+	Cookies            []*JSONCookie          `json:"cookies"`
+	Status             int                    `json:"status"`
+	Initiator          string                 `json:"initiator"`
+	OtherInfo          map[string]interface{} `json:"other_info"`
+	ScreenshotFileName string                 `json:"screenshot,omitempty"`
 }
 
 // NewJSONRedirects transform slice of `Redirect`s to slice of `jsonRedirect`s

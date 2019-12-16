@@ -48,7 +48,12 @@ func TestNewChromeTracer(t *testing.T) {
 		return
 	}
 
-	chr := NewChromeTracer(remote)
+	size := &ScreenSize{
+		Width:  1920,
+		Height: 1080,
+	}
+
+	chr := NewChromeTracer(remote, size, "./assets")
 
 	if chr.instance != remote {
 		t.Error("wrong remote debuger instance")
@@ -70,7 +75,12 @@ func TestChromeTracer_Trace(t *testing.T) {
 
 	defer remote.Close()
 
-	chr := NewChromeTracer(remote)
+	size := &ScreenSize{
+		Width:  1920,
+		Height: 1080,
+	}
+
+	chr := NewChromeTracer(remote, size, "./assets")
 
 	if chr.instance != remote {
 		t.Error("wrong remote debuger instance")
@@ -81,7 +91,7 @@ func TestChromeTracer_Trace(t *testing.T) {
 		t.Error(err)
 	}
 
-	redirects, err := chr.Trace(traceURL)
+	redirects, err := chr.Trace(traceURL, "testScreenshot.png")
 	if err != nil {
 		t.Error(err)
 	}
@@ -101,7 +111,12 @@ func TestChromeTracer_Trace2(t *testing.T) {
 
 	defer remote.Close()
 
-	chr := NewChromeTracer(remote)
+	size := &ScreenSize{
+		Width:  1920,
+		Height: 1080,
+	}
+
+	chr := NewChromeTracer(remote, size, "./assets")
 
 	if chr.instance != remote {
 		t.Error("wrong remote debuger instance")
@@ -112,7 +127,7 @@ func TestChromeTracer_Trace2(t *testing.T) {
 		t.Error(err)
 	}
 
-	redirects, err := chr.Trace(traceURL)
+	redirects, err := chr.Trace(traceURL, "testScreenshot.png")
 	if err != nil {
 		t.Error(err)
 	}

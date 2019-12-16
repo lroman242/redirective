@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/lroman242/redirective/controllers"
@@ -14,6 +16,7 @@ import (
 )
 
 func main() {
+	screenshotsStoragePath := flag.String("screenshotsPath", envString("SCREENSHOTS_PATH", "assets"), "Path to directory where screenshots would be stored | set this flag or env SCREENSHOTS_PATH")
 	certFile := flag.String("certPath", envString("CERT_PATH", ""), "Path to the certificate file | set this flag or env CERT_PATH")
 	keyFile := flag.String("keyPath", envString("KEY_PATH", ""), "Path to the key file | set this flag or env KEY_PATH")
 
@@ -32,9 +35,18 @@ func main() {
 		}
 	}()
 
+	err := checkScreenshotsStorageDir(*screenshotsStoragePath)
+	if err != nil {
+		log.Fatalln("folder to store screenshots not found and couldn`t be created")
+	}
+
+	if !strings.HasSuffix(*screenshotsStoragePath, "/") {
+		*screenshotsStoragePath = *screenshotsStoragePath + "/"
+	}
+
 	// start http server
-	go func(certFile, keyFile string) {
-		handler := makeHandler()
+	go func(certFile, keyFile, screenshotsStoragePath string) {
+		handler := makeHandler(screenshotsStoragePath)
 
 		err := http.ListenAndServe(":8080", *handler)
 		if err != nil {
@@ -47,7 +59,7 @@ func main() {
 				log.Printf("ListenAndServeTLS error: %s", err)
 			}
 		}
-	}(*certFile, *keyFile)
+	}(*certFile, *keyFile, *screenshotsStoragePath)
 
 	// awaiting to exit signal
 	ch := make(chan os.Signal, 1)
@@ -77,7 +89,7 @@ func runBrowser() *os.Process {
 // Create web server handler
 //  - define routes
 //  - add CORS middleware
-func makeHandler() *http.Handler {
+func makeHandler(screenshotsStoragePath string) *http.Handler {
 	mux := http.NewServeMux()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -87,8 +99,12 @@ func makeHandler() *http.Handler {
 	})
 
 	// add routes
-	mux.HandleFunc("/api/screenshot/chrome", controllers.ChromeScreenshot)
-	mux.HandleFunc("/api/trace/chrome", controllers.ChromeTrace)
+	mux.HandleFunc("/api/screenshot/chrome", func(writer http.ResponseWriter, request *http.Request) {
+		controllers.ChromeScreenshot(writer, request, screenshotsStoragePath)
+	})
+	mux.HandleFunc("/api/trace/chrome", func(writer http.ResponseWriter, request *http.Request) {
+		controllers.ChromeTrace(writer, request, screenshotsStoragePath)
+	})
 
 	fs := http.FileServer(http.Dir("assets/"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fs))
@@ -112,4 +128,47 @@ func envString(key, def string) string {
 	}
 
 	return def
+}
+
+func checkScreenshotsStorageDir(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := isWritable(path)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func isWritable(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	if !info.IsDir() {
+		return false, errors.New("path isn't a directory")
+	}
+
+	// Check if the user bit is enabled in file permission
+	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
+		return false, errors.New("write permission bit is not set on this file for user")
+	}
+
+	var stat syscall.Stat_t
+	if err = syscall.Stat(path, &stat); err != nil {
+		return false, errors.New("unable to get stat. error " + err.Error())
+	}
+
+	if uint32(os.Geteuid()) != stat.Uid {
+		return false, errors.New("user doesn't have permission to write to this directory")
+	}
+
+	return true, nil
 }
