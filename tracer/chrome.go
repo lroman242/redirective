@@ -116,7 +116,7 @@ func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string]
 		return frameID, fmt.Errorf("set visibility size error: %s", err)
 	}
 
-	_, err = ct.instance.Navigate(url.String())
+	frameID, err = ct.instance.Navigate(url.String())
 	if err != nil {
 		return frameID, fmt.Errorf("`Navigate` failed. %s", err)
 	}
@@ -139,7 +139,6 @@ func (ct *ChromeTracer) Trace(url *url.URL, fileName string) ([]*Redirect, error
 	rawRedirects := make(map[string][]godet.Params)
 	rawResponses := make(map[string][]godet.Params)
 
-	//FIXME: frameID always ""
 	frameID, err := ct.traceURL(url, &rawRedirects, &rawResponses, fileName)
 	if err != nil {
 		return redirects, err

@@ -72,14 +72,15 @@ func NewJSONRedirect(r *Redirect) *JSONRedirect {
 	}
 
 	return &JSONRedirect{
-		From:            r.From.String(),
-		To:              r.To.String(),
-		RequestHeaders:  rRequestHeaders,
-		ResponseHeaders: rResponseHeaders,
-		Cookies:         NewJSONCookies(r.Cookies),
-		Status:          r.Status,
-		Initiator:       r.Initiator,
-		OtherInfo:       r.OtherInfo,
+		From:               r.From.String(),
+		To:                 r.To.String(),
+		RequestHeaders:     rRequestHeaders,
+		ResponseHeaders:    rResponseHeaders,
+		Cookies:            NewJSONCookies(r.Cookies),
+		Status:             r.Status,
+		Initiator:          r.Initiator,
+		OtherInfo:          r.OtherInfo,
+		ScreenshotFileName: r.ScreenshotFileName,
 	}
 }
 
