@@ -1,8 +1,6 @@
 ## TODO
-   - Fix cookies parsing
    - WS API
    - tests [>= 80%]
-   - add linter
 
 ## Install chrome headless
 ###Uninstall previous chrome

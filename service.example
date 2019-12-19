@@ -7,6 +7,11 @@ WantedBy=multi-user.target
 [Service]
 User=root
 Group=root
+
+SCREENSHOTS_PATH=/path/to/screenshots/folder
+CERT_PATH=
+KEY_PATH=
+
 ExecStart=/var/www/redirective_service/redirective
 Restart=on-failure
 
