@@ -8,9 +8,9 @@ WantedBy=multi-user.target
 User=root
 Group=root
 
-SCREENSHOTS_PATH=/path/to/screenshots/folder
-CERT_PATH=
-KEY_PATH=
+Environment=SCREENSHOTS_PATH=/path/to/screenshots/folder
+Environment=CERT_PATH=
+Environment=KEY_PATH=
 
 ExecStart=/var/www/redirective_service/redirective
 Restart=on-failure

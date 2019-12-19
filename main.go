@@ -44,22 +44,27 @@ func main() {
 		*screenshotsStoragePath = *screenshotsStoragePath + "/"
 	}
 
-	// start http server
-	go func(certFile, keyFile, screenshotsStoragePath string) {
-		handler := makeHandler(screenshotsStoragePath)
+	handler := makeHandler(*screenshotsStoragePath)
 
+	// start http server
+	go func(handler *http.Handler) {
+		log.Println("Listening http on 8080")
 		err := http.ListenAndServe(":8080", *handler)
 		if err != nil {
 			log.Printf("ListenAndServe error: %s", err)
 		}
+	}(handler)
 
-		if certFile != "" && keyFile != "" {
+	// start https server
+	if *certFile != "" && *keyFile != "" {
+		go func(certFile, keyFile string, handler *http.Handler) {
+			log.Println("Listening http on 8083")
 			err = http.ListenAndServeTLS(":8083", certFile, keyFile, *handler)
 			if err != nil {
 				log.Printf("ListenAndServeTLS error: %s", err)
 			}
-		}
-	}(*certFile, *keyFile, *screenshotsStoragePath)
+		}(*certFile, *keyFile, handler)
+	}
 
 	// awaiting to exit signal
 	ch := make(chan os.Signal, 1)
