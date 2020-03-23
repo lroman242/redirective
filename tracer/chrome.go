@@ -81,7 +81,7 @@ func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string]
 	})
 
 	// create new tab
-	tab, _ := ct.instance.NewTab("https://www.google.com")
+	tab, _ := ct.instance.NewTab("")
 	defer func(tab *godet.Tab) {
 		err = ct.instance.CloseTab(tab)
 		if err != nil {

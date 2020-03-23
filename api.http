@@ -1,0 +1,19 @@
+GET http://localhost:8080/api/screenshot/chrome?url=https%3A%2F%2Fir3.xyz%2F5ad05d9dbeb84
+
+###
+
+GET http://localhost:8080/api/trace/chrome?url=https%3A%2F%2Fir3.xyz%2F5ad05d9dbeb84
+
+###
+
+GET http://localhost:8080/api/trace/chrome?url=http%3A%2F%2Fssyoutube.com
+
+###
+
+GET http://api.redirective.net/api/trace/chrome?url=http%3A%2F%2Fssyoutube.com
+
+###
+
+GET http://api.redirective.net/api/trace/chrome?url=https%3A%2F%2Fir3.xyz%2F5ad05d9dbeb84
+
+###
