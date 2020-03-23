@@ -1,7 +1,3 @@
-## TODO
-   - WS API
-   - tests [>= 80%]
-
 ## Install chrome headless
 ###Uninstall previous chrome
 ``

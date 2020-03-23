@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/lroman242/redirective/controllers"
 	"github.com/rs/cors"
@@ -19,6 +20,14 @@ func main() {
 	screenshotsStoragePath := flag.String("screenshotsPath", envString("SCREENSHOTS_PATH", "assets"), "Path to directory where screenshots would be stored | set this flag or env SCREENSHOTS_PATH")
 	certFile := flag.String("certPath", envString("CERT_PATH", ""), "Path to the certificate file | set this flag or env CERT_PATH")
 	keyFile := flag.String("keyPath", envString("KEY_PATH", ""), "Path to the key file | set this flag or env KEY_PATH")
+	logPath := flag.String("logPath", envString("LOG_PATH", ""), "Path to the log file | set this flag or env LOG_PATH")
+
+	logFile, err := os.Create(*logPath)
+	if err != nil {
+		panic(err)
+	}
+	defer logFile.Close()
+	logger := log.New(logFile, "", log.LstdFlags)
 
 	//parse arguments
 	flag.Parse()
@@ -35,16 +44,16 @@ func main() {
 		}
 	}()
 
-	err := checkScreenshotsStorageDir(*screenshotsStoragePath)
+	err = checkScreenshotsStorageDir(*screenshotsStoragePath)
 	if err != nil {
-		log.Fatalln("folder to store screenshots not found and couldn`t be created")
+		log.Fatalf("folder to store screenshots not found and couldn`t be created. error: %s", err)
 	}
 
 	if !strings.HasSuffix(*screenshotsStoragePath, "/") {
 		*screenshotsStoragePath = *screenshotsStoragePath + "/"
 	}
 
-	handler := makeHandler(*screenshotsStoragePath)
+	handler := makeHandler(*screenshotsStoragePath, logger)
 
 	// start http server
 	go func(handler *http.Handler) {
@@ -94,7 +103,7 @@ func runBrowser() *os.Process {
 // Create web server handler
 //  - define routes
 //  - add CORS middleware
-func makeHandler(screenshotsStoragePath string) *http.Handler {
+func makeHandler(screenshotsStoragePath string, logger *log.Logger) *http.Handler {
 	mux := http.NewServeMux()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -105,9 +114,11 @@ func makeHandler(screenshotsStoragePath string) *http.Handler {
 
 	// add routes
 	mux.HandleFunc("/api/screenshot/chrome", func(writer http.ResponseWriter, request *http.Request) {
+		logger.Printf("[%s] Screenshot request: %s", time.Now().Format(time.RFC3339), request.URL.Query().Get("url"))
 		controllers.ChromeScreenshot(writer, request, screenshotsStoragePath)
 	})
 	mux.HandleFunc("/api/trace/chrome", func(writer http.ResponseWriter, request *http.Request) {
+		logger.Printf("[%s] Trace request: %s", time.Now().Format(time.RFC3339), request.URL.Query().Get("url"))
 		controllers.ChromeTrace(writer, request, screenshotsStoragePath)
 	})
 
