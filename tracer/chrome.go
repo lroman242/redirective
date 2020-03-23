@@ -43,6 +43,7 @@ type ChromeRemoteDebuggerInterface interface {
 	SetDeviceMetricsOverride(width int, height int, deviceScaleFactor float64, mobile bool, fitWindow bool) error
 	SetVisibleSize(width, height int) error
 	SaveScreenshot(filename string, perm os.FileMode, quality int, fromSurface bool) error
+	SetUserAgent(userAgent string) error
 }
 
 // ChromeTracer represent tracer based on google chrome debugging tools

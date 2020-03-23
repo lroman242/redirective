@@ -84,8 +84,19 @@ func main() {
 
 // Run google chrome headless
 func runBrowser() *os.Process {
-	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox
-	cmd := exec.Command("/usr/bin/google-chrome", "--addr=localhost", "--port=9222", "--remote-debugging-port=9222", "--remote-debugging-address=0.0.0.0", "--disable-extensions", "--disable-gpu", "--headless", "--hide-scrollbars", "--no-first-run", "--no-sandbox")
+	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/77.0.3854.3 Chrome/77.0.3854.3 Safari/537.36"
+	cmd := exec.Command("/usr/bin/google-chrome",
+		"--addr=localhost",
+		"--port=9222",
+		"--remote-debugging-port=9222",
+		"--remote-debugging-address=0.0.0.0",
+		"--disable-extensions",
+		"--disable-gpu",
+		"--headless",
+		"--hide-scrollbars",
+		"--no-first-run",
+		"--no-sandbox",
+		"--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
 
 	cmd.Stdout = os.Stdout
 
