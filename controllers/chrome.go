@@ -2,7 +2,11 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"math/rand"
 	"net/http"
@@ -86,7 +90,7 @@ func ChromeScreenshot(w http.ResponseWriter, r *http.Request, screenshotsStorage
 }
 
 // ChromeTrace parse a trace path for provided url
-func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath string) {
+func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath string, col *mongo.Collection) {
 	screenShotFileName := randomScreenshotFileName()
 	// connect to Chrome instance
 	remote, err := godet.Connect("localhost:9222", false)
@@ -102,7 +106,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 	// close connection
 	defer func() {
 		if err = remote.Close(); err != nil {
-			log.Printf("remote.Close error: %s", err)
+			log.Printf("remote.Close error: %s \n", err)
 		}
 	}()
 	// create new tracer instance
@@ -142,11 +146,41 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 		return
 	}
 
+	jsonRedirects := tracer.NewJSONRedirects(redirects)
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	res, err := col.InsertOne(ctx, bson.M{"redirects": jsonRedirects, "screenshot": screenShotFileName})
+	if err != nil {
+		log.Printf("error occurred during saving trace results. error: %s \n", err)
+
+		(&response.Response{
+			Status:     true,
+			Message:    "url successfully traced",
+			StatusCode: 200,
+			Data: struct {
+				Redirects  []*tracer.JSONRedirect `json:"redirects"`
+				Screenshot string                 `json:"screenshot"`
+			}{
+				Redirects:  jsonRedirects,
+				Screenshot: screenShotFileName,
+			}}).Success(w)
+
+		return
+	}
+
 	(&response.Response{
 		Status:     true,
 		Message:    "url successfully traced",
 		StatusCode: 200,
-		Data:       tracer.NewJSONRedirects(redirects)}).Success(w)
+		Data: struct {
+			Redirects  []*tracer.JSONRedirect `json:"redirects"`
+			Screenshot string                 `json:"screenshot"`
+			ID         interface{}            `json:"id"`
+		}{
+			Redirects:  jsonRedirects,
+			Screenshot: screenShotFileName,
+			ID:         res.InsertedID,
+		}}).Success(w)
 }
 
 // parseScreenSizeFromRequest - parse screen width and height from request or use default values
@@ -186,4 +220,45 @@ func randomScreenshotFileName() string {
 	}
 
 	return string(b) + `.png`
+}
+
+func LoadTraceResults(w http.ResponseWriter, r *http.Request, col *mongo.Collection, id string) {
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		log.Printf("invalid ObjectID. error: %s \n", err)
+		(&response.Response{
+			Status:     false,
+			Message:    fmt.Sprint("sorry, an error occurred. invalid id"),
+			StatusCode: 500,
+			Data:       nil}).Failed(w)
+
+		return
+	}
+
+	trace := new(struct {
+		Redirects  []*tracer.JSONRedirect `json:"redirects"`
+		Screenshot string                 `json:"screenshot"`
+	})
+
+	err = col.FindOne(ctx, bson.M{"_id": ID}).Decode(trace)
+	if err != nil {
+		log.Printf("mongodb reulsts decode failed. error: %s \n", err)
+		(&response.Response{
+			Status:     false,
+			Message:    fmt.Sprint("sorry, an error occurred. trace not found"),
+			StatusCode: 500,
+			Data:       nil}).Failed(w)
+
+		return
+	}
+
+	log.Printf("%+v\n", trace)
+
+	(&response.Response{
+		Status:     true,
+		Message:    "url successfully traced",
+		StatusCode: 200,
+		Data:       trace}).Success(w)
 }

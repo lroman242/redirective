@@ -1,8 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
+	"github.com/julienschmidt/httprouter"
+	"github.com/lroman242/redirective/controllers"
+	"github.com/rs/cors"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"net/http"
 	"os"
@@ -11,9 +18,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/lroman242/redirective/controllers"
-	"github.com/rs/cors"
 )
 
 func main() {
@@ -53,7 +57,21 @@ func main() {
 		*screenshotsStoragePath = *screenshotsStoragePath + "/"
 	}
 
-	handler := makeHandler(*screenshotsStoragePath, logger)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:example@localhost:27017"))
+	if err != nil {
+		log.Fatalf("mongodb connection failed. error: %s", err)
+	}
+
+	ctx, _ = context.WithTimeout(context.Background(), 2*time.Second)
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		log.Fatalf("mongodb ping failed. error: %s", err)
+	}
+
+	collection := client.Database("redirective").Collection("tracers")
+
+	handler := makeHandler(*screenshotsStoragePath, logger, collection)
 
 	// start http server
 	go func(handler *http.Handler) {
@@ -114,8 +132,8 @@ func runBrowser() *os.Process {
 // Create web server handler
 //  - define routes
 //  - add CORS middleware
-func makeHandler(screenshotsStoragePath string, logger *log.Logger) *http.Handler {
-	mux := http.NewServeMux()
+func makeHandler(screenshotsStoragePath string, logger *log.Logger, col *mongo.Collection) *http.Handler {
+	router := httprouter.New()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
@@ -124,22 +142,28 @@ func makeHandler(screenshotsStoragePath string, logger *log.Logger) *http.Handle
 	})
 
 	// add routes
-	mux.HandleFunc("/api/screenshot/chrome", func(writer http.ResponseWriter, request *http.Request) {
+	router.GET("/api/find/:id", func(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
+		id := ps.ByName("id")
+		logger.Printf("[%s] Find: %s", time.Now().Format(time.RFC3339), id)
+		controllers.LoadTraceResults(writer, request, col, id)
+	})
+	router.GET("/api/screenshot/chrome", func(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
 		logger.Printf("[%s] Screenshot request: %s", time.Now().Format(time.RFC3339), request.URL.Query().Get("url"))
 		controllers.ChromeScreenshot(writer, request, screenshotsStoragePath)
 	})
-	mux.HandleFunc("/api/trace/chrome", func(writer http.ResponseWriter, request *http.Request) {
+	router.GET("/api/trace/chrome", func(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
 		logger.Printf("[%s] Trace request: %s", time.Now().Format(time.RFC3339), request.URL.Query().Get("url"))
-		controllers.ChromeTrace(writer, request, screenshotsStoragePath)
+		controllers.ChromeTrace(writer, request, screenshotsStoragePath, col)
 	})
 
-	fs := http.FileServer(http.Dir("assets/"))
-	mux.Handle("/assets/", http.StripPrefix("/assets/", fs))
+	// Serve static files from the ./assets directory
+	// http(s)://api.redirective.net/screenshots/{filename.png}
+	router.NotFound = http.FileServer(http.Dir("assets/"))
 
 	// cors.Default() setup the middleware with default options being
 	// all origins accepted with simple methods (GET, POST). See
 	// documentation below for more options.
-	handler := cors.Default().Handler(mux)
+	handler := cors.Default().Handler(router)
 
 	// Insert the middleware
 	handler = c.Handler(handler)

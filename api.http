@@ -10,6 +10,10 @@ GET http://localhost:8080/api/trace/chrome?url=http%3A%2F%2Fssyoutube.com
 
 ###
 
+GET http://localhost:8080/api/find/5e99fa77ec255a4dbcb9b904
+
+###
+
 GET http://api.redirective.net/api/trace/chrome?url=http%3A%2F%2Fssyoutube.com
 
 ###
