@@ -1,4 +1,4 @@
-package tracer
+package domain
 
 import (
 	"net/http"

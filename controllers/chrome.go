@@ -4,6 +4,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/lroman242/redirective/domain"
+	tracer2 "github.com/lroman242/redirective/infrastructure/tracer"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +17,6 @@ import (
 	"time"
 
 	"github.com/lroman242/redirective/response"
-	"github.com/lroman242/redirective/tracer"
 	"github.com/raff/godet"
 )
 
@@ -45,7 +46,7 @@ func ChromeScreenshot(w http.ResponseWriter, r *http.Request, screenshotsStorage
 		}
 	}()
 
-	chr := tracer.NewChromeTracer(remote, parseScreenSizeFromRequest(r), screenshotsStoragePath)
+	chr := tracer2.NewChromeTracer(remote, parseScreenSizeFromRequest(r), screenshotsStoragePath)
 
 	urlToTrace := r.URL.Query().Get("url")
 	if urlToTrace == "" {
@@ -110,7 +111,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 		}
 	}()
 	// create new tracer instance
-	chr := tracer.NewChromeTracer(remote, parseScreenSizeFromRequest(r), screenshotsStoragePath)
+	chr := tracer2.NewChromeTracer(remote, parseScreenSizeFromRequest(r), screenshotsStoragePath)
 	// check url
 	urlToTrace := r.URL.Query().Get("url")
 	if urlToTrace == "" {
@@ -146,7 +147,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 		return
 	}
 
-	jsonRedirects := tracer.NewJSONRedirects(redirects)
+	jsonRedirects := domain.NewJSONRedirects(redirects)
 
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	res, err := col.InsertOne(ctx, bson.M{"redirects": jsonRedirects, "screenshot": screenShotFileName})
@@ -158,7 +159,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 			Message:    "url successfully traced",
 			StatusCode: 200,
 			Data: struct {
-				Redirects  []*tracer.JSONRedirect `json:"redirects"`
+				Redirects  []*domain.JSONRedirect `json:"redirects"`
 				Screenshot string                 `json:"screenshot"`
 			}{
 				Redirects:  jsonRedirects,
@@ -173,7 +174,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 		Message:    "url successfully traced",
 		StatusCode: 200,
 		Data: struct {
-			Redirects  []*tracer.JSONRedirect `json:"redirects"`
+			Redirects  []*domain.JSONRedirect `json:"redirects"`
 			Screenshot string                 `json:"screenshot"`
 			ID         interface{}            `json:"id"`
 		}{
@@ -184,7 +185,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 }
 
 // parseScreenSizeFromRequest - parse screen width and height from request or use default values
-func parseScreenSizeFromRequest(r *http.Request) *tracer.ScreenSize {
+func parseScreenSizeFromRequest(r *http.Request) *domain.ScreenSize {
 	var width int
 
 	widthStr := r.URL.Query().Get("width")
@@ -209,7 +210,7 @@ func parseScreenSizeFromRequest(r *http.Request) *tracer.ScreenSize {
 		height = defaultScreenHeight
 	}
 
-	return tracer.NewScreenSize(width, height)
+	return domain.NewScreenSize(width, height)
 }
 
 func randomScreenshotFileName() string {
@@ -238,7 +239,7 @@ func LoadTraceResults(w http.ResponseWriter, r *http.Request, col *mongo.Collect
 	}
 
 	trace := new(struct {
-		Redirects  []*tracer.JSONRedirect `json:"redirects"`
+		Redirects  []*domain.JSONRedirect `json:"redirects"`
 		Screenshot string                 `json:"screenshot"`
 	})
 

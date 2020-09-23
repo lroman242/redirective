@@ -2,6 +2,7 @@ package tracer
 
 import (
 	"encoding/json"
+	"github.com/lroman242/redirective/domain"
 	"log"
 	"net/http"
 	"net/url"
@@ -48,7 +49,7 @@ func TestNewChromeTracer(t *testing.T) {
 		return
 	}
 
-	size := &ScreenSize{
+	size := &domain.ScreenSize{
 		Width:  1920,
 		Height: 1080,
 	}
@@ -75,7 +76,7 @@ func TestChromeTracer_Trace(t *testing.T) {
 
 	defer remote.Close()
 
-	size := &ScreenSize{
+	size := &domain.ScreenSize{
 		Width:  1920,
 		Height: 1080,
 	}
@@ -111,7 +112,7 @@ func TestChromeTracer_Trace2(t *testing.T) {
 
 	defer remote.Close()
 
-	size := &ScreenSize{
+	size := &domain.ScreenSize{
 		Width:  1920,
 		Height: 1080,
 	}

@@ -1,4 +1,4 @@
-package tracer
+package domain
 
 // ScreenSize type describe common screen size to capture correct size screenshot
 type ScreenSize struct {

@@ -26,15 +26,15 @@ func main() {
 	keyFile := flag.String("keyPath", envString("KEY_PATH", ""), "Path to the key file | set this flag or env KEY_PATH")
 	logPath := flag.String("logPath", envString("LOG_PATH", "log/redirective.log"), "Path to the log file | set this flag or env LOG_PATH")
 
+	//parse arguments
+	flag.Parse()
+
 	logFile, err := os.Create(*logPath)
 	if err != nil {
 		panic(err)
 	}
 	defer logFile.Close()
 	logger := log.New(logFile, "", log.LstdFlags)
-
-	//parse arguments
-	flag.Parse()
 
 	//run browser (google chrome headless)
 	browserProcess := runBrowser()

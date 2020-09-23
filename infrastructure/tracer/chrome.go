@@ -3,6 +3,7 @@ package tracer
 import (
 	"errors"
 	"fmt"
+	"github.com/lroman242/redirective/domain"
 	"net/http"
 	"net/url"
 	"os"
@@ -49,12 +50,12 @@ type ChromeRemoteDebuggerInterface interface {
 // ChromeTracer represent tracer based on google chrome debugging tools
 type ChromeTracer struct {
 	instance               ChromeRemoteDebuggerInterface
-	size                   *ScreenSize
+	size                   *domain.ScreenSize
 	screenshotsStoragePath string
 }
 
 // NewChromeTracer create new chrome tracer instance
-func NewChromeTracer(chrome *godet.RemoteDebugger, size *ScreenSize, screenshotsStoragePath string) *ChromeTracer {
+func NewChromeTracer(chrome *godet.RemoteDebugger, size *domain.ScreenSize, screenshotsStoragePath string) *ChromeTracer {
 	return &ChromeTracer{
 		instance:               chrome,
 		size:                   size,
@@ -134,8 +135,8 @@ func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string]
 }
 
 // Trace parse redirect trace path for provided url
-func (ct *ChromeTracer) Trace(url *url.URL, fileName string) ([]*Redirect, error) {
-	var redirects []*Redirect
+func (ct *ChromeTracer) Trace(url *url.URL, fileName string) ([]*domain.Redirect, error) {
+	var redirects []*domain.Redirect
 
 	rawRedirects := make(map[string][]godet.Params)
 	rawResponses := make(map[string][]godet.Params)
@@ -182,7 +183,7 @@ func (ct *ChromeTracer) Trace(url *url.URL, fileName string) ([]*Redirect, error
 }
 
 // Screenshot function makes a final page screen capture
-func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, fileName string) error {
+func (ct *ChromeTracer) Screenshot(url *url.URL, size *domain.ScreenSize, fileName string) error {
 	err := ct.instance.EnableRequestInterception(true)
 	if err != nil {
 		return fmt.Errorf("`EnableRequestInterception` failed. %s", err)
@@ -230,7 +231,7 @@ func (ct *ChromeTracer) Screenshot(url *url.URL, size *ScreenSize, fileName stri
 	return nil
 }
 
-func parseRedirectFromRaw(rawRedirect godet.Params) (*Redirect, error) {
+func parseRedirectFromRaw(rawRedirect godet.Params) (*domain.Redirect, error) {
 	if _, ok := rawRedirect["redirectResponse"]; !ok {
 		return nil, errors.New(errorMessageRedirectResponseNotExists)
 	}
@@ -285,7 +286,7 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*Redirect, error) {
 
 	initiator := rawRedirect.Map("initiator")["type"].(string)
 
-	return NewRedirect(from, to, requestHeaders, &responseHeaders, cookies, status, initiator), nil
+	return domain.NewRedirect(from, to, requestHeaders, &responseHeaders, cookies, status, initiator), nil
 }
 
 func parseHeadersFromRaw(request map[string]interface{}) (*http.Header, error) {
@@ -316,7 +317,7 @@ func parseCookies(s string) []*http.Cookie {
 	return cookies
 }
 
-func pareseMainResponseFromRaw(rawResponses godet.Params) (*Redirect, error) {
+func pareseMainResponseFromRaw(rawResponses godet.Params) (*domain.Redirect, error) {
 	if _, ok := rawResponses["response"]; !ok {
 		return nil, errors.New(errorMessageResponseParamNotExists)
 	}
@@ -360,7 +361,7 @@ func pareseMainResponseFromRaw(rawResponses godet.Params) (*Redirect, error) {
 
 	status := int(response["status"].(float64))
 
-	redirect := NewRedirect(&url.URL{}, to, &requestHeaders, &responseHeaders, cookies, status, "")
+	redirect := domain.NewRedirect(&url.URL{}, to, &requestHeaders, &responseHeaders, cookies, status, "")
 
 	return redirect, nil
 }
