@@ -2,6 +2,7 @@ package config
 
 import "flag"
 
+// AppConfig describe configuration for all parts of application
 type AppConfig struct {
 	Storage *StorageConfig
 	//Logger *LogConfig
@@ -24,6 +25,7 @@ type AppConfig struct {
 //}
 //
 
+// ParseConsole function will parse config options from CLI arguments
 func ParseConsole() *AppConfig {
 	logPath := flag.String("logPath", "log/redirective.log", "Path to the log file")
 
