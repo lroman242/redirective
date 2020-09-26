@@ -19,11 +19,14 @@ const connectTimeout = 10
 const pingTimeout = 2
 const queryTimeout = 5
 
+// MongoDB type describe MongoDB storage instance
 type MongoDB struct {
 	collection *mongo.Collection
 }
 
-func NewMongoDB(conf config.StorageConfig) Storage {
+// NewMongoDB function will create new MongoDB (implements Storage interface)
+// instance according to provided StorageConfig
+func NewMongoDB(conf config.StorageConfig) *MongoDB {
 	ctx, _ := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s", conf.User, conf.Password, conf.Host, conf.Port)))
 	if err != nil {
@@ -40,6 +43,7 @@ func NewMongoDB(conf config.StorageConfig) Storage {
 	return &MongoDB{collection: collection}
 }
 
+// SaveTraceResults function used to save domain.TraceResults into storage
 func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface{}, error) {
 	ctx, _ := context.WithTimeout(context.Background(), queryTimeout*time.Second)
 	res, err := m.collection.InsertOne(ctx, traceResults)
@@ -50,6 +54,7 @@ func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface
 	return res.InsertedID, nil
 }
 
+// FindTraceResults function used to find domain.TraceResults into storage using ID
 func (m *MongoDB) FindTraceResults(id interface{}) (*domain.TraceResults, error) {
 	var ID primitive.ObjectID
 	var err error

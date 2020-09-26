@@ -1,5 +1,6 @@
 package logger
 
+// Logger interface describe logger instance used in application to process logs
 type Logger interface {
 	Debugf(string, ...interface{})
 	Infof(string, ...interface{})
