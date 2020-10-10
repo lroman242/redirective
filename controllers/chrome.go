@@ -185,7 +185,7 @@ func ChromeTrace(w http.ResponseWriter, r *http.Request, screenshotsStoragePath 
 }
 
 // parseScreenSizeFromRequest - parse screen width and height from request or use default values
-func parseScreenSizeFromRequest(r *http.Request) *domain.ScreenSize {
+func parseScreenSizeFromRequest(r *http.Request) *tracer2.ScreenSize {
 	var width int
 
 	widthStr := r.URL.Query().Get("width")
@@ -210,7 +210,7 @@ func parseScreenSizeFromRequest(r *http.Request) *domain.ScreenSize {
 		height = defaultScreenHeight
 	}
 
-	return domain.NewScreenSize(width, height)
+	return tracer2.NewScreenSize(width, height)
 }
 
 func randomScreenshotFileName() string {

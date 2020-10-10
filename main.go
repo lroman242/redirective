@@ -24,7 +24,7 @@ func main() {
 	screenshotsStoragePath := flag.String("screenshotsPath", envString("SCREENSHOTS_PATH", "assets/screenshots"), "Path to directory where screenshots would be stored | set this flag or env SCREENSHOTS_PATH")
 	certFile := flag.String("certPath", envString("CERT_PATH", ""), "Path to the certificate file | set this flag or env CERT_PATH")
 	keyFile := flag.String("keyPath", envString("KEY_PATH", ""), "Path to the key file | set this flag or env KEY_PATH")
-	logPath := flag.String("logPath", envString("LOG_PATH", "log/redirective.log"), "Path to the log file | set this flag or env LOG_PATH")
+	logPath := flag.String("logPath", envString("LOG_PATH", "logs/redirective.log"), "Path to the log file | set this flag or env LOG_PATH")
 
 	//parse arguments
 	flag.Parse()

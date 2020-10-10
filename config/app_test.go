@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func TestParseConsole(t *testing.T) {
-	testValues := &AppConfig{
-		Storage:         &StorageConfig{
+func initTestConfig() *AppConfig {
+	return &AppConfig{
+		Storage: &StorageConfig{
 			Host:     "testhost",
 			Port:     1234,
 			User:     "tester",
@@ -16,7 +16,7 @@ func TestParseConsole(t *testing.T) {
 			Database: "testdb",
 			Table:    "testtable",
 		},
-		HTTPServer:      &HTTPServerConfig{
+		HTTPServer: &HTTPServerConfig{
 			Host:     "test2host",
 			Port:     5678,
 			HTTPS:    false,
@@ -26,21 +26,25 @@ func TestParseConsole(t *testing.T) {
 		ScreenshotsPath: "screenshots/",
 		LogFilePath:     "logs/test.log",
 	}
+}
 
-	os.Args = append(os.Args, "--logPath=" + testValues.LogFilePath)
-	os.Args = append(os.Args, "--screenshotsPath=" + testValues.ScreenshotsPath)
+func TestParseConsole(t *testing.T) {
+	testValues := initTestConfig()
 
-	os.Args = append(os.Args, "--host=" + testValues.HTTPServer.Host)
-	os.Args = append(os.Args, "--port=" + strconv.Itoa(testValues.HTTPServer.Port))
-	os.Args = append(os.Args, "--certPath=" + testValues.HTTPServer.CertPath)
-	os.Args = append(os.Args, "--keyPath=" + testValues.HTTPServer.KeyPath)
+	os.Args = append(os.Args, "--logPath="+testValues.LogFilePath)
+	os.Args = append(os.Args, "--screenshotsPath="+testValues.ScreenshotsPath)
 
-	os.Args = append(os.Args, "--storageHost=" + testValues.Storage.Host)
-	os.Args = append(os.Args, "--storagePort=" + strconv.Itoa(testValues.Storage.Port))
-	os.Args = append(os.Args, "--storageUser=" + testValues.Storage.User)
-	os.Args = append(os.Args, "--storagePass=" + testValues.Storage.Password)
-	os.Args = append(os.Args, "--storageDatabase=" + testValues.Storage.Database)
-	os.Args = append(os.Args, "--storageTable=" + testValues.Storage.Table)
+	os.Args = append(os.Args, "--host="+testValues.HTTPServer.Host)
+	os.Args = append(os.Args, "--port="+strconv.Itoa(testValues.HTTPServer.Port))
+	os.Args = append(os.Args, "--certPath="+testValues.HTTPServer.CertPath)
+	os.Args = append(os.Args, "--keyPath="+testValues.HTTPServer.KeyPath)
+
+	os.Args = append(os.Args, "--storageHost="+testValues.Storage.Host)
+	os.Args = append(os.Args, "--storagePort="+strconv.Itoa(testValues.Storage.Port))
+	os.Args = append(os.Args, "--storageUser="+testValues.Storage.User)
+	os.Args = append(os.Args, "--storagePass="+testValues.Storage.Password)
+	os.Args = append(os.Args, "--storageDatabase="+testValues.Storage.Database)
+	os.Args = append(os.Args, "--storageTable="+testValues.Storage.Table)
 
 	appConf := ParseConsole()
 

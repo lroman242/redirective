@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -45,80 +46,133 @@ type ChromeRemoteDebuggerInterface interface {
 	SetVisibleSize(width, height int) error
 	SaveScreenshot(filename string, perm os.FileMode, quality int, fromSurface bool) error
 	SetUserAgent(userAgent string) error
+	Close() error
+}
+
+type ChromeTracer interface {
+	Tracer
+	ChromeProcess() *os.Process
+	Close() error
 }
 
 // ChromeTracer represent tracer based on google chrome debugging tools
-type ChromeTracer struct {
-	instance               ChromeRemoteDebuggerInterface
-	size                   *domain.ScreenSize
-	screenshotsStoragePath string
+type chromeTracer struct {
+	size                   	*ScreenSize
+	screenshotsStoragePath 	string
+	chromeProcess			*os.Process
+}
+
+func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterface, error) {
+	remote, err := godet.Connect("localhost:9222", false)
+	if err != nil {
+		return nil, err
+	}
+
+	return remote, nil
+}
+
+// Close method will stop google-chrome process
+func (ct *chromeTracer) Close() error {
+	if err := ct.chromeProcess.Kill(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ChromeProcess get google-chrome process
+func (ct *chromeTracer) ChromeProcess() *os.Process {
+	return ct.chromeProcess
 }
 
 // NewChromeTracer create new chrome tracer instance
-func NewChromeTracer(chrome *godet.RemoteDebugger, size *domain.ScreenSize, screenshotsStoragePath string) *ChromeTracer {
-	return &ChromeTracer{
-		instance:               chrome,
+func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) *chromeTracer {
+	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/77.0.3854.3 Chrome/77.0.3854.3 Safari/537.36"
+	cmd := exec.Command("/usr/bin/google-chrome",
+		"--addr=localhost",
+		"--port=9222",
+		"--remote-debugging-port=9222",
+		"--remote-debugging-address=0.0.0.0",
+		"--disable-extensions",
+		"--disable-gpu",
+		"--headless",
+		"--hide-scrollbars",
+		"--no-first-run",
+		"--no-sandbox",
+		"--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
+
+	cmd.Stdout = os.Stdout
+
+	err := cmd.Start()
+	if err != nil {
+		panic(err)
+	}
+
+	ct := &chromeTracer{
 		size:                   size,
 		screenshotsStoragePath: screenshotsStoragePath,
+		chromeProcess: 			cmd.Process,
 	}
+
+	return ct
 }
 
-func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string][]godet.Params, fileName string) (string, error) {
+func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *url.URL, redirects, responses *map[string][]godet.Params, fileName string) (string, error) {
 	frameID := ""
 
-	err := ct.instance.EnableRequestInterception(true)
+	err := debugger.EnableRequestInterception(true)
 	if err != nil {
 		return frameID, fmt.Errorf("`EnableRequestInterception` failed. %s", err)
 	}
 
-	ct.instance.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
+	debugger.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
 		if _, ok := params["redirectResponse"]; ok && params["type"] == documentParamName {
 			(*redirects)[params["frameId"].(string)] = append((*redirects)[params["frameId"].(string)], params)
 		}
 	})
-	ct.instance.CallbackEvent("Network.responseReceived", func(params godet.Params) {
+	debugger.CallbackEvent("Network.responseReceived", func(params godet.Params) {
 		if params["type"] == documentParamName {
 			(*responses)[params["frameId"].(string)] = append((*responses)[params["frameId"].(string)], params)
 		}
 	})
 
 	// create new tab
-	tab, _ := ct.instance.NewTab("")
+	tab, _ := debugger.NewTab("")
 	defer func(tab *godet.Tab) {
-		err = ct.instance.CloseTab(tab)
+		err = debugger.CloseTab(tab)
 		if err != nil {
 			log.Error(fmt.Errorf("`CloseTab` failed. %s", err))
 		}
 	}(tab)
 
-	err = ct.instance.NetworkEvents(true)
+	err = debugger.NetworkEvents(true)
 	if err != nil {
 		return frameID, fmt.Errorf("`NetworkEvents failed. %s", err)
 	}
 
 	// navigate in existing tab
-	err = ct.instance.ActivateTab(tab)
+	err = debugger.ActivateTab(tab)
 	if err != nil {
 		return frameID, fmt.Errorf("`ActivateTab` failed. %s", err)
 	}
 
 	// re-enable events when changing active tab
-	err = ct.instance.AllEvents(true) // enable all events
+	err = debugger.AllEvents(true) // enable all events
 	if err != nil {
 		return frameID, fmt.Errorf("`AllEvents` failed. %s", err)
 	}
 
-	err = ct.instance.SetDeviceMetricsOverride(ct.size.Width, ct.size.Height, 0, false, false)
+	err = debugger.SetDeviceMetricsOverride(ct.size.Width, ct.size.Height, 0, false, false)
 	if err != nil {
 		return frameID, fmt.Errorf("set screen size error: %s", err)
 	}
 
-	err = ct.instance.SetVisibleSize(ct.size.Width, ct.size.Height)
+	err = debugger.SetVisibleSize(ct.size.Width, ct.size.Height)
 	if err != nil {
 		return frameID, fmt.Errorf("set visibility size error: %s", err)
 	}
 
-	frameID, err = ct.instance.Navigate(url.String())
+	frameID, err = debugger.Navigate(url.String())
 	if err != nil {
 		return frameID, fmt.Errorf("`Navigate` failed. %s", err)
 	}
@@ -126,7 +180,7 @@ func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string]
 	time.Sleep(time.Second * 5)
 
 	// take a screenshot
-	err = ct.instance.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
+	err = debugger.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
 	if err != nil {
 		return frameID, fmt.Errorf("cannot capture screenshot: %s", err)
 	}
@@ -135,13 +189,20 @@ func (ct *ChromeTracer) traceURL(url *url.URL, redirects, responses *map[string]
 }
 
 // Trace parse redirect trace path for provided url
-func (ct *ChromeTracer) Trace(url *url.URL, fileName string) ([]*domain.Redirect, error) {
+func (ct *chromeTracer) Trace(url *url.URL, fileName string) ([]*domain.Redirect, error) {
+	debugger, err := ct.initChromeRemoteDebugger()
+	if err != nil {
+		panic(err)
+	}
+
+	defer debugger.Close()
+
 	var redirects []*domain.Redirect
 
 	rawRedirects := make(map[string][]godet.Params)
 	rawResponses := make(map[string][]godet.Params)
 
-	frameID, err := ct.traceURL(url, &rawRedirects, &rawResponses, fileName)
+	frameID, err := ct.traceURL(debugger, url, &rawRedirects, &rawResponses, fileName)
 	if err != nil {
 		return redirects, err
 	}
@@ -183,38 +244,45 @@ func (ct *ChromeTracer) Trace(url *url.URL, fileName string) ([]*domain.Redirect
 }
 
 // Screenshot function makes a final page screen capture
-func (ct *ChromeTracer) Screenshot(url *url.URL, size *domain.ScreenSize, fileName string) error {
-	err := ct.instance.EnableRequestInterception(true)
+func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, fileName string) error {
+	debugger, err := ct.initChromeRemoteDebugger()
+	if err != nil {
+		panic(err)
+	}
+
+	defer debugger.Close()
+
+	err = debugger.EnableRequestInterception(true)
 	if err != nil {
 		return fmt.Errorf("`EnableRequestInterception` failed. %s", err)
 	}
 
 	// create new tab
-	tab, _ := ct.instance.NewTab(url.String())
+	tab, _ := debugger.NewTab(url.String())
 	defer func(tab *godet.Tab) {
-		err = ct.instance.CloseTab(tab)
+		err = debugger.CloseTab(tab)
 		if err != nil {
 			log.Error(fmt.Errorf("`CloseTab` failed. %s", err))
 		}
 	}(tab)
 
 	// navigate in existing tab
-	err = ct.instance.ActivateTab(tab)
+	err = debugger.ActivateTab(tab)
 	if err != nil {
 		return fmt.Errorf("`ActivateTab` failed. %s", err)
 	}
 
-	err = ct.instance.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
+	err = debugger.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
 	if err != nil {
 		return fmt.Errorf("set screen size error: %s", err)
 	}
 
-	err = ct.instance.SetVisibleSize(size.Width, size.Height)
+	err = debugger.SetVisibleSize(size.Width, size.Height)
 	if err != nil {
 		return fmt.Errorf("set visibility size error: %s", err)
 	}
 
-	_, err = ct.instance.Navigate(url.String())
+	_, err = debugger.Navigate(url.String())
 	if err != nil {
 		return fmt.Errorf("`Navigate` failed. %s", err)
 	}
@@ -222,7 +290,7 @@ func (ct *ChromeTracer) Screenshot(url *url.URL, size *domain.ScreenSize, fileNa
 	time.Sleep(time.Second * 5)
 
 	// take a screenshot
-	err = ct.instance.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
+	err = debugger.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
 	if err != nil {
 		return fmt.Errorf("cannot capture screenshot: %s", err)
 	}

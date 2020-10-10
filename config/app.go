@@ -27,7 +27,7 @@ type AppConfig struct {
 
 // ParseConsole function will parse config options from CLI arguments
 func ParseConsole() *AppConfig {
-	logPath := flag.String("logPath", "log/redirective.log", "Path to the log file")
+	logPath := flag.String("logPath", "logs/redirective.log", "Path to the log file")
 
 	screenshotsStoragePath := flag.String("screenshotsPath", "assets/screenshots", "Path to directory where screenshots would be stored")
 

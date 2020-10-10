@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -26,21 +27,23 @@ type MongoDB struct {
 
 // NewMongoDB function will create new MongoDB (implements Storage interface)
 // instance according to provided StorageConfig
-func NewMongoDB(conf config.StorageConfig) *MongoDB {
+func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 	ctx, _ := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s", conf.User, conf.Password, conf.Host, conf.Port)))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s", conf.User, conf.Password, conf.Host, strconv.Itoa(conf.Port))))
 	if err != nil {
 		log.Fatalf("mongodb connection failed. error: %s", err)
+		return nil, err
 	}
 
 	ctx, _ = context.WithTimeout(context.Background(), pingTimeout*time.Second)
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
 		log.Fatalf("mongodb ping failed. error: %s", err)
+		return nil, err
 	}
 
 	collection := client.Database(conf.Database).Collection(conf.Table)
-	return &MongoDB{collection: collection}
+	return &MongoDB{collection: collection}, nil
 }
 
 // SaveTraceResults function used to save domain.TraceResults into storage

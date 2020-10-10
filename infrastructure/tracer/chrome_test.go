@@ -2,7 +2,6 @@ package tracer
 
 import (
 	"encoding/json"
-	"github.com/lroman242/redirective/domain"
 	"log"
 	"net/http"
 	"net/url"
@@ -42,50 +41,29 @@ func TestMain(m *testing.M) {
 }
 
 func TestNewChromeTracer(t *testing.T) {
-	// connect to Chrome instance
-	remote, err := godet.Connect("localhost:9222", false)
-	if err != nil {
-		t.Fatalf("cannot connect to Chrome instance: %s", err)
-		return
-	}
-
-	size := &domain.ScreenSize{
+	size := &ScreenSize{
 		Width:  1920,
 		Height: 1080,
 	}
 
-	chr := NewChromeTracer(remote, size, "./assets")
+	assetsPath := "./assets"
 
-	if chr.instance != remote {
-		t.Error("wrong remote debuger instance")
+	chr := NewChromeTracer(size, assetsPath)
+	if chr.screenshotsStoragePath != assetsPath {
+		t.Error("Wrong assets path")
 	}
-
-	err = remote.Close()
-	if err != nil {
-		t.Error(err)
+	if chr.size != size {
+		t.Error("Wrong window size")
 	}
 }
 
 func TestChromeTracer_Trace(t *testing.T) {
-	// connect to Chrome instance
-	remote, err := godet.Connect("localhost:9222", false)
-	if err != nil {
-		t.Fatalf("cannot connect to Chrome instance: %s", err)
-		return
-	}
-
-	defer remote.Close()
-
-	size := &domain.ScreenSize{
+	size := &ScreenSize{
 		Width:  1920,
 		Height: 1080,
 	}
 
-	chr := NewChromeTracer(remote, size, "./assets")
-
-	if chr.instance != remote {
-		t.Error("wrong remote debuger instance")
-	}
+	chr := NewChromeTracer(size, "./assets")
 
 	traceURL, err := url.Parse("https://www.google.com.ua")
 	if err != nil {
@@ -103,25 +81,12 @@ func TestChromeTracer_Trace(t *testing.T) {
 }
 
 func TestChromeTracer_Trace2(t *testing.T) {
-	// connect to Chrome instance
-	remote, err := godet.Connect("localhost:9222", false)
-	if err != nil {
-		t.Fatalf("cannot connect to Chrome instance: %s", err)
-		return
-	}
-
-	defer remote.Close()
-
-	size := &domain.ScreenSize{
+	size := &ScreenSize{
 		Width:  1920,
 		Height: 1080,
 	}
 
-	chr := NewChromeTracer(remote, size, "./assets")
-
-	if chr.instance != remote {
-		t.Error("wrong remote debuger instance")
-	}
+	chr := NewChromeTracer(size, "./assets")
 
 	traceURL, err := url.Parse("http://google.com")
 	if err != nil {

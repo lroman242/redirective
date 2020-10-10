@@ -9,5 +9,5 @@ import (
 // Tracer interface represent required list of function for http tracers
 type Tracer interface {
 	Trace(url *url.URL, fileName string) ([]*domain.Redirect, error)
-	Screenshot(url *url.URL, size *domain.ScreenSize, path string) error
+	Screenshot(url *url.URL, size *ScreenSize, path string) error
 }
