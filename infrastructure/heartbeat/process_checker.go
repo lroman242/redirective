@@ -13,14 +13,14 @@ import (
 // if all processes are alive using os.Process instance
 type processChecker struct {
 	chromeProcess *os.Process
-	log logger.Logger
+	log           logger.Logger
 }
 
 // NewProcessChecker function will create new instance of processChecker
 func NewProcessChecker(process *os.Process, log logger.Logger) HeartBeat {
 	return &processChecker{
 		chromeProcess: process,
-		log: log,
+		log:           log,
 	}
 }
 
@@ -42,9 +42,9 @@ func (pc *processChecker) Monitor(ctx context.Context, duration time.Duration) {
 	go func() {
 		for {
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				return // break infinity loop
-			case <- time.After(duration):
+			case <-time.After(duration):
 				err := pc.Check()
 				if err != nil {
 					log.Error(err)
@@ -57,7 +57,7 @@ func (pc *processChecker) Monitor(ctx context.Context, duration time.Duration) {
 
 // checkChromeProcess will do a check if google chrome process is alive
 // and return error if something is wrong
-func (pc *processChecker)checkChromeProcess() error {
+func (pc *processChecker) checkChromeProcess() error {
 	err := pc.chromeProcess.Signal(syscall.Signal(0))
 	if err != nil {
 		errno, ok := err.(syscall.Errno)

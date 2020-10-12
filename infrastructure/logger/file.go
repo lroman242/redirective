@@ -36,7 +36,7 @@ func NewFileLogger(logsDirPath string) *fileLogger {
 	return l
 }
 
-func (l *fileLogger) logFilePath() string  {
+func (l *fileLogger) logFilePath() string {
 	return l.logsDir + "/" + l.filename
 }
 
@@ -81,7 +81,7 @@ func (l *fileLogger) Rotate() (err error) {
 	// Rename dest file if it already exists
 	_, err = os.Stat(l.logFilePath())
 	if err == nil {
-		err = os.Rename(l.logFilePath(), l.logFilePath() + "."+time.Now().Format(time.RFC3339))
+		err = os.Rename(l.logFilePath(), l.logFilePath()+"."+time.Now().Format(time.RFC3339))
 		if err != nil {
 			return
 		}
@@ -97,27 +97,27 @@ func (l *fileLogger) Rotate() (err error) {
 }
 
 func (l *fileLogger) Debugf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") + fmt.Sprintf(format + "\n", data...)))
+	l.Write([]byte(l.prefix("debug") + fmt.Sprintf(format+"\n", data...)))
 }
 
 func (l *fileLogger) Infof(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("info") + fmt.Sprintf(format + "\n", data...)))
+	l.Write([]byte(l.prefix("info") + fmt.Sprintf(format+"\n", data...)))
 }
 
 func (l *fileLogger) Printf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("-") + fmt.Sprintf(format + "\n", data...)))
+	l.Write([]byte(l.prefix("-") + fmt.Sprintf(format+"\n", data...)))
 }
 
 func (l *fileLogger) Warnf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("warn") + fmt.Sprintf(format + "\n", data...)))
+	l.Write([]byte(l.prefix("warn") + fmt.Sprintf(format+"\n", data...)))
 }
 
 func (l *fileLogger) Errorf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("error") + fmt.Sprintf(format + "\n", data...)))
+	l.Write([]byte(l.prefix("error") + fmt.Sprintf(format+"\n", data...)))
 }
 
 func (l *fileLogger) Fatalf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("fatal") + fmt.Sprintf(format + "\n", data...)))
+	l.Write([]byte(l.prefix("fatal") + fmt.Sprintf(format+"\n", data...)))
 }
 
 func (l *fileLogger) Debug(data ...interface{}) {

@@ -2,7 +2,7 @@ package logger
 
 // Logger interface describe logger instance used in application to process logs
 type Logger interface {
-	Write ([]byte) (int, error)
+	Write([]byte) (int, error)
 	Debugf(string, ...interface{})
 	Infof(string, ...interface{})
 	Printf(string, ...interface{})

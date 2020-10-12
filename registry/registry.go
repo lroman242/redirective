@@ -7,14 +7,19 @@ import (
 	"github.com/lroman242/redirective/infrastructure/logger"
 	"github.com/lroman242/redirective/infrastructure/storage"
 	"github.com/lroman242/redirective/infrastructure/tracer"
+	ip "github.com/lroman242/redirective/interface/api/presenter"
+	ir "github.com/lroman242/redirective/interface/api/repository"
+	"github.com/lroman242/redirective/usecase/interactor"
+	"github.com/lroman242/redirective/usecase/presenter"
+	"github.com/lroman242/redirective/usecase/repository"
 	"log"
 	"os"
 )
 
 type registry struct {
-	storage storage.Storage
-	logger logger.Logger
-	tracer tracer.Tracer
+	storage   storage.Storage
+	logger    logger.Logger
+	tracer    tracer.Tracer
 	heartbeat heartbeat.HeartBeat
 }
 
@@ -56,9 +61,25 @@ func NewRegistry(conf *config.AppConfig) Registry {
 	//hb := heartbeat.NewProcessChecker(cmd.Process, fl)
 
 	return &registry{
-		storage:   mgdb,
-		logger:    fl,
-		tracer:    tr,
+		storage: mgdb,
+		logger:  fl,
+		tracer:  tr,
 		//heartbeat: hb,
 	}
+}
+
+func (r *registry) NewTraceController() {
+
+}
+
+func (r *registry) NewTraceInteractor() interactor.TraceInteractor {
+	return interactor.NewTraceInteractor(r.tracer, r.NewTracePresenter(), r.NewTracerRepository(), r.logger)
+}
+
+func (r *registry) NewTracerRepository() repository.TraceRepository {
+	return ir.NewTraceRepository(r.storage)
+}
+
+func (r *registry) NewTracePresenter() presenter.TracePresenter {
+	return ip.NewTracePresenter()
 }
