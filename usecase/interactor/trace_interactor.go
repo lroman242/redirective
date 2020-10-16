@@ -6,7 +6,9 @@ import (
 	"github.com/lroman242/redirective/infrastructure/tracer"
 	"github.com/lroman242/redirective/usecase/presenter"
 	"github.com/lroman242/redirective/usecase/repository"
+	"math/rand"
 	"net/url"
+	"time"
 )
 
 // TraceInteractor represent interactor for actions related to trace results
@@ -42,17 +44,24 @@ func (ti *traceInteractor) Trace(url *url.URL, fileName string) (*domain.TraceRe
 		return nil, err
 	}
 
+	id, err := ti.Repository.SaveTraceResults(results)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO: return id
+
 	return ti.Presenter.ResponseTraceResults(results), err
 }
 
 // Screenshot function will make screenshot of landing url
-func (ti *traceInteractor) Screenshot(url *url.URL, width int, height int, path string) (string, error) {
+func (ti *traceInteractor) Screenshot(url *url.URL, width int, height int, assetsFolderPath string) (string, error) {
 	screenSize := &tracer.ScreenSize{
 		Width:  width,
 		Height: height,
 	}
 
-	path, err := ti.Tracer.Screenshot(url, screenSize, path)
+	path, err := ti.Tracer.Screenshot(url, screenSize, assetsFolderPath+"/"+ti.randomScreenshotFileName())
 	if err != nil {
 		return "", err
 	}
@@ -70,4 +79,17 @@ func (ti *traceInteractor) FindTrace(id interface{}) (*domain.TraceResults, erro
 	}
 
 	return ti.Presenter.ResponseTraceResults(results), err
+}
+
+func (ti *traceInteractor) randomScreenshotFileName() string {
+	var charset = "abcdefghijklmnopqrstuvwxyz" +
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	b := make([]byte, 16)
+
+	for i := range b {
+		b[i] = charset[rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(charset))]
+	}
+
+	return string(b) + `.png`
 }
