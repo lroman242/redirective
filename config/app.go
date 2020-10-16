@@ -1,6 +1,13 @@
 package config
 
-import "flag"
+import (
+	"errors"
+	"flag"
+	"log"
+	"os"
+	"strings"
+	"syscall"
+)
 
 // AppConfig describe configuration for all parts of application
 type AppConfig struct {
@@ -46,6 +53,16 @@ func ParseConsole() *AppConfig {
 	//parse arguments
 	flag.Parse()
 
+	err := checkScreenshotsStorageDir(*screenshotsStoragePath)
+	if err != nil {
+		log.Fatalf("folder to store screenshots not found and couldn`t be created. error: %s", err)
+	}
+
+	if !strings.HasSuffix(*screenshotsStoragePath, "/") {
+		*screenshotsStoragePath = *screenshotsStoragePath + "/"
+	}
+
+
 	return &AppConfig{
 		Storage: &StorageConfig{
 			Host:     *storageHost,
@@ -65,4 +82,47 @@ func ParseConsole() *AppConfig {
 		ScreenshotsPath: *screenshotsStoragePath,
 		LogFilePath:     *logPath,
 	}
+}
+
+func checkScreenshotsStorageDir(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := isWritable(path)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func isWritable(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	if !info.IsDir() {
+		return false, errors.New("path isn't a directory")
+	}
+
+	// Check if the user bit is enabled in file permission
+	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
+		return false, errors.New("write permission bit is not set on this file for user")
+	}
+
+	var stat syscall.Stat_t
+	if err = syscall.Stat(path, &stat); err != nil {
+		return false, errors.New("unable to get stat. error " + err.Error())
+	}
+
+	if uint32(os.Geteuid()) != stat.Uid {
+		return false, errors.New("user doesn't have permission to write to this directory")
+	}
+
+	return true, nil
 }

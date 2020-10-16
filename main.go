@@ -1,77 +1,21 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"flag"
 	"github.com/julienschmidt/httprouter"
-	"github.com/lroman242/redirective/controllers"
+	"github.com/lroman242/redirective/config"
+	"github.com/lroman242/redirective/infrastructure/logger"
+	"github.com/lroman242/redirective/registry"
 	"github.com/rs/cors"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
-	"os/signal"
-	"strings"
-	"syscall"
 	"time"
 )
 
 func main() {
-	screenshotsStoragePath := flag.String("screenshotsPath", envString("SCREENSHOTS_PATH", "assets/screenshots"), "Path to directory where screenshots would be stored | set this flag or env SCREENSHOTS_PATH")
-	certFile := flag.String("certPath", envString("CERT_PATH", ""), "Path to the certificate file | set this flag or env CERT_PATH")
-	keyFile := flag.String("keyPath", envString("KEY_PATH", ""), "Path to the key file | set this flag or env KEY_PATH")
-	logPath := flag.String("logPath", envString("LOG_PATH", "logs/redirective.log"), "Path to the log file | set this flag or env LOG_PATH")
+	conf := config.ParseConsole()
 
-	//parse arguments
-	flag.Parse()
-
-	logFile, err := os.Create(*logPath)
-	if err != nil {
-		panic(err)
-	}
-	defer logFile.Close()
-	logger := log.New(logFile, "", log.LstdFlags)
-
-	//run browser (google chrome headless)
-	browserProcess := runBrowser()
-
-	//stop browser (google chrome headless)
-	defer func() {
-		log.Printf("killing google-chrom PID %d\n", browserProcess.Pid)
-		// Kill chrome:
-		if err := browserProcess.Kill(); err != nil {
-			log.Fatal("failed to kill process: ", err)
-		}
-	}()
-
-	err = checkScreenshotsStorageDir(*screenshotsStoragePath)
-	if err != nil {
-		log.Fatalf("folder to store screenshots not found and couldn`t be created. error: %s", err)
-	}
-
-	if !strings.HasSuffix(*screenshotsStoragePath, "/") {
-		*screenshotsStoragePath = *screenshotsStoragePath + "/"
-	}
-
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:example@localhost:27017"))
-	if err != nil {
-		log.Fatalf("mongodb connection failed. error: %s", err)
-	}
-
-	ctx, _ = context.WithTimeout(context.Background(), 2*time.Second)
-	err = client.Ping(ctx, readpref.Primary())
-	if err != nil {
-		log.Fatalf("mongodb ping failed. error: %s", err)
-	}
-
-	collection := client.Database("redirective").Collection("tracers")
-
-	handler := makeHandler(*screenshotsStoragePath, logger, collection)
+	r := registry.NewRegistry(conf)
+	handler := r.NewHandler()
 
 	// start http server
 	go func(handler *http.Handler) {
@@ -82,57 +26,12 @@ func main() {
 		}
 	}(handler)
 
-	// start https server
-	if *certFile != "" && *keyFile != "" {
-		go func(certFile, keyFile string, handler *http.Handler) {
-			log.Println("Listening http on 8083")
-			err = http.ListenAndServeTLS(":8083", certFile, keyFile, *handler)
-			if err != nil {
-				log.Printf("ListenAndServeTLS error: %s", err)
-			}
-		}(*certFile, *keyFile, handler)
-	}
-
-	// awaiting to exit signal
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	s := <-ch
-	log.Printf("Got signal: %v, exiting.", s)
-}
-
-// Run google chrome headless
-func runBrowser() *os.Process {
-	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/77.0.3854.3 Chrome/77.0.3854.3 Safari/537.36"
-	cmd := exec.Command("/usr/bin/google-chrome",
-		"--addr=localhost",
-		"--port=9222",
-		"--remote-debugging-port=9222",
-		"--remote-debugging-address=0.0.0.0",
-		"--disable-extensions",
-		"--disable-gpu",
-		"--headless",
-		"--hide-scrollbars",
-		"--no-first-run",
-		"--no-sandbox",
-		"--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
-
-	cmd.Stdout = os.Stdout
-
-	err := cmd.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("google-chrome headless runned with PID: %d\n", cmd.Process)
-	log.Println("google-chrome headless runned on 9222 port")
-
-	return cmd.Process
 }
 
 // Create web server handler
 //  - define routes
 //  - add CORS middleware
-func makeHandler(screenshotsStoragePath string, logger *log.Logger, col *mongo.Collection) *http.Handler {
+func makeHandler() *http.Handler {
 	router := httprouter.New()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -169,57 +68,4 @@ func makeHandler(screenshotsStoragePath string, logger *log.Logger, col *mongo.C
 	handler = c.Handler(handler)
 
 	return &handler
-}
-
-// parse string value from os environment
-// return default value if not found
-func envString(key, def string) string {
-	if env := os.Getenv(key); env != "" {
-		return env
-	}
-
-	return def
-}
-
-func checkScreenshotsStorageDir(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err := isWritable(path)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func isWritable(path string) (bool, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-
-	if !info.IsDir() {
-		return false, errors.New("path isn't a directory")
-	}
-
-	// Check if the user bit is enabled in file permission
-	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
-		return false, errors.New("write permission bit is not set on this file for user")
-	}
-
-	var stat syscall.Stat_t
-	if err = syscall.Stat(path, &stat); err != nil {
-		return false, errors.New("unable to get stat. error " + err.Error())
-	}
-
-	if uint32(os.Geteuid()) != stat.Uid {
-		return false, errors.New("user doesn't have permission to write to this directory")
-	}
-
-	return true, nil
 }
