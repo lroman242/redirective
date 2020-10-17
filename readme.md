@@ -64,3 +64,13 @@ and check the output picture
 - create config file `/etc/rsyslog.d/redirective.conf` with content from `service_log.example` file (log file path `/var/log/redirective.log`)
 - restart rsyslog by running `sudo service rsyslog restart` command
 - start **redirective** service by running `sudo service redirective start` command
+
+### Certbot
+```sudo certbot run -a manual -i nginx --preferred-challenges=dns```
+
+#TODO:
+- tests > 80%
+- linter
+- prometeus + grafana
+- heartbeat
+- autorestart on fail
