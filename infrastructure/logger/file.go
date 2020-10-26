@@ -97,49 +97,50 @@ func (l *fileLogger) Rotate() (err error) {
 }
 
 func (l *fileLogger) Debugf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format+"\n", data...)).String()))
+	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Infof(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprintf(format+"\n", data...)).String()))
+	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Printf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("-") + NewStackTrace(fmt.Sprintf(format+"\n", data...)).String()))
+	l.Write([]byte(l.prefix("-") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Warnf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("warn") + NewStackTrace(fmt.Sprintf(format+"\n", data...)).String()))
+	l.Write([]byte(l.prefix("warn") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Errorf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprintf(format+"\n", data...)).String()))
+	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Fatalf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprintf(format+"\n", data...)).String()))
+	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Debug(data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprint(data...)).String()))
+	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Info(data ...interface{}) {
-	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprint(data...)).String()))
+	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Warn(data ...interface{}) {
-	l.Write([]byte(l.prefix("warn") + NewStackTrace(fmt.Sprint(data...)).String()))
+	l.Write([]byte(l.prefix("warn") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Error(data ...interface{}) {
-	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprint(data...)).String()))
+	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Fatal(data ...interface{}) {
-	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprint(data...)).String()))
+	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
 }
 
 func (l *fileLogger) Panic(data ...interface{}) {
-	l.Write([]byte(l.prefix("panic") + NewStackTrace(fmt.Sprint(data...)).String()))
+	l.Write([]byte(l.prefix("panic") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
+	panic(data)
 }
