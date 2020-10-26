@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/raff/godet"
+	"log"
 )
 
 const setCookieHeaderName = "set-cookie"
@@ -117,7 +117,7 @@ func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) *chromeTra
 	return ct
 }
 
-func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *url.URL, redirects, responses *map[string][]godet.Params, fileName string) (string, error) {
+func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *url.URL, redirects, responses *map[string][]godet.Params, filePath string) (string, error) {
 	frameID := ""
 
 	err := debugger.EnableRequestInterception(true)
@@ -141,7 +141,7 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 	defer func(tab *godet.Tab) {
 		err = debugger.CloseTab(tab)
 		if err != nil {
-			log.Error(fmt.Errorf("`CloseTab` failed. %s", err))
+			log.Println(fmt.Errorf("`CloseTab` failed. %s", err))
 		}
 	}(tab)
 
@@ -180,7 +180,7 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 	time.Sleep(time.Second * 5)
 
 	// take a screenshot
-	err = debugger.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
+	err = debugger.SaveScreenshot(filePath, 0644, 100, true)
 	if err != nil {
 		return frameID, fmt.Errorf("cannot capture screenshot: %s", err)
 	}
@@ -189,7 +189,7 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 }
 
 // Trace parse redirect trace path for provided url
-func (ct *chromeTracer) Trace(url *url.URL, fileName string) (*domain.TraceResults, error) {
+func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResults, error) {
 	debugger, err := ct.initChromeRemoteDebugger()
 	if err != nil {
 		panic(err)
@@ -202,7 +202,7 @@ func (ct *chromeTracer) Trace(url *url.URL, fileName string) (*domain.TraceResul
 	rawRedirects := make(map[string][]godet.Params)
 	rawResponses := make(map[string][]godet.Params)
 
-	frameID, err := ct.traceURL(debugger, url, &rawRedirects, &rawResponses, fileName)
+	frameID, err := ct.traceURL(debugger, url, &rawRedirects, &rawResponses, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,6 @@ func (ct *chromeTracer) Trace(url *url.URL, fileName string) (*domain.TraceResul
 			return nil, fmt.Errorf("an error during parsing response. %s", err)
 		}
 
-		response.ScreenshotFileName = fileName
 		redirects = append(redirects, response)
 	} else {
 		return nil, errors.New(errorMessageNoResponseFromMainFrame)
@@ -242,12 +241,12 @@ func (ct *chromeTracer) Trace(url *url.URL, fileName string) (*domain.TraceResul
 
 	return &domain.TraceResults{
 		Redirects:  redirects,
-		Screenshot: ct.screenshotsStoragePath + fileName,
+		Screenshot: filePath,
 	}, nil
 }
 
 // Screenshot function makes a final page screen capture
-func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, fileName string) (string, error) {
+func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, filePath string) error {
 	debugger, err := ct.initChromeRemoteDebugger()
 	if err != nil {
 		panic(err)
@@ -257,7 +256,7 @@ func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, fileName stri
 
 	err = debugger.EnableRequestInterception(true)
 	if err != nil {
-		return "", fmt.Errorf("`EnableRequestInterception` failed. %s", err)
+		return fmt.Errorf("`EnableRequestInterception` failed. %s", err)
 	}
 
 	// create new tab
@@ -265,41 +264,41 @@ func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, fileName stri
 	defer func(tab *godet.Tab) {
 		err = debugger.CloseTab(tab)
 		if err != nil {
-			log.Error(fmt.Errorf("`CloseTab` failed. %s", err))
+			log.Println(fmt.Errorf("`CloseTab` failed. %s", err))
 		}
 	}(tab)
 
 	// navigate in existing tab
 	err = debugger.ActivateTab(tab)
 	if err != nil {
-		return "", fmt.Errorf("`ActivateTab` failed. %s", err)
+		return fmt.Errorf("`ActivateTab` failed. %s", err)
 	}
 
 	err = debugger.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
 	if err != nil {
-		return "", fmt.Errorf("set screen size error: %s", err)
+		return fmt.Errorf("set screen size error: %s", err)
 	}
 
 	err = debugger.SetVisibleSize(size.Width, size.Height)
 	if err != nil {
-		return "", fmt.Errorf("set visibility size error: %s", err)
+		return fmt.Errorf("set visibility size error: %s", err)
 	}
 
 	_, err = debugger.Navigate(url.String())
 	if err != nil {
-		return "", fmt.Errorf("`Navigate` failed. %s", err)
+		return fmt.Errorf("`Navigate` failed. %s", err)
 	}
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 3)
 
 	// take a screenshot
-	err = debugger.SaveScreenshot(ct.screenshotsStoragePath+fileName, 0644, 100, true)
+	err = debugger.SaveScreenshot(filePath, 0644, 100, true)
 	if err != nil {
-		return "", fmt.Errorf("cannot capture screenshot: %s", err)
+		return fmt.Errorf("cannot capture screenshot: %s", err)
 	}
 	//time.Sleep(time.Second)
 
-	return ct.screenshotsStoragePath + fileName, nil
+	return nil
 }
 
 func parseRedirectFromRaw(rawRedirect godet.Params) (*domain.Redirect, error) {

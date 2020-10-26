@@ -97,7 +97,7 @@ func (l *fileLogger) Rotate() (err error) {
 }
 
 func (l *fileLogger) Debugf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") +  NewStackTrace(fmt.Sprintf(format+"\n", data...)).String() ))
+	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format+"\n", data...)).String()))
 }
 
 func (l *fileLogger) Infof(format string, data ...interface{}) {

@@ -34,14 +34,14 @@ type AppConfig struct {
 
 // ParseConsole function will parse config options from CLI arguments
 func ParseConsole() *AppConfig {
-	logPath := flag.String("logPath", "logs/redirective.log", "Path to the log file")
+	logPath := flag.String("logPath", "logs", "Path to the log file")
 
 	screenshotsStoragePath := flag.String("screenshotsPath", "assets/screenshots", "Path to directory where screenshots would be stored")
 
 	host := flag.String("host", "", "Web server listen host")
 	port := flag.Int("port", 8080, "Web server listen port")
-	certFile := flag.String("certPath", "/etc/ssl/cert.pem", "Path to the certificate file")
-	keyFile := flag.String("keyPath", "/etc/ssl/privkey.pem", "Path to the key file")
+	certFile := flag.String("certPath", "", "Path to the certificate file")
+	keyFile := flag.String("keyPath", "", "Path to the key file")
 
 	storageHost := flag.String("storageHost", "localhost", "Storage host (default: localhost)")
 	storagePort := flag.Int("storagePort", 3306, "Storage port (default: 27017)")
@@ -61,7 +61,6 @@ func ParseConsole() *AppConfig {
 	if !strings.HasSuffix(*screenshotsStoragePath, "/") {
 		*screenshotsStoragePath = *screenshotsStoragePath + "/"
 	}
-
 
 	return &AppConfig{
 		Storage: &StorageConfig{

@@ -1,4 +1,5 @@
 .idea/
 vendor/
 tmp/
+assets/screenshots/*.png
 redirective

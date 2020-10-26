@@ -38,18 +38,19 @@ func NewTraceInteractor(tracer tracer.Tracer, presenter presenter.TracePresenter
 
 // Trace func will trace provided url
 // and will return trace results (including screenshot)
-func (ti *traceInteractor) Trace(url *url.URL, fileName string) (*domain.TraceResults, error) {
-	results, err := ti.Tracer.Trace(url, fileName)
+func (ti *traceInteractor) Trace(url *url.URL, assetsFolderPath string) (*domain.TraceResults, error) {
+	results, err := ti.Tracer.Trace(url, assetsFolderPath+ti.randomScreenshotFileName())
 	if err != nil {
+		ti.Log.Error(err)
 		return nil, err
 	}
 
 	id, err := ti.Repository.SaveTraceResults(results)
 	if err != nil {
+		ti.Log.Error(err)
 		return nil, err
 	}
-
-	//TODO: return id
+	results.ID = id
 
 	return ti.Presenter.ResponseTraceResults(results), err
 }
@@ -61,8 +62,10 @@ func (ti *traceInteractor) Screenshot(url *url.URL, width int, height int, asset
 		Height: height,
 	}
 
-	path, err := ti.Tracer.Screenshot(url, screenSize, assetsFolderPath+"/"+ti.randomScreenshotFileName())
+	path := assetsFolderPath + ti.randomScreenshotFileName()
+	err := ti.Tracer.Screenshot(url, screenSize, path)
 	if err != nil {
+		ti.Log.Error(err)
 		return "", err
 	}
 
@@ -75,6 +78,7 @@ func (ti *traceInteractor) Screenshot(url *url.URL, width int, height int, asset
 func (ti *traceInteractor) FindTrace(id interface{}) (*domain.TraceResults, error) {
 	results, err := ti.Repository.FindTraceResults(id)
 	if err != nil {
+		ti.Log.Error(err)
 		return nil, err
 	}
 

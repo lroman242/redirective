@@ -18,7 +18,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 const defaultScreenWidth = 1920
@@ -103,24 +102,16 @@ func (r *registry) NewHandler() http.Handler {
 		Debug: true,
 	})
 
-	// add routes
-	router.GET("/api/find/:id", func(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
-		id := ps.ByName("id")
-		r.logger.Printf("[%s] Find: %s", time.Now().Format(time.RFC3339), id)
-		controllers.LoadTraceResults(writer, request, col, id)
-	})
-	router.GET("/api/screenshot/chrome", func(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
-		r.logger.Printf("[%s] Screenshot request: %s", time.Now().Format(time.RFC3339), request.URL.Query().Get("url"))
-		controllers.ChromeScreenshot(writer, request, screenshotsStoragePath)
-	})
-	router.GET("/api/trace/chrome", func(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
-		r.logger.Printf("[%s] Trace request: %s", time.Now().Format(time.RFC3339), request.URL.Query().Get("url"))
-		controllers.ChromeTrace(writer, request, screenshotsStoragePath, col)
-	})
+	controller := r.NewTraceController()
 
-	// Serve static files from the ./assets directory
+	// add routes
+	router.GET("/api/find/:id", controller.FindTraceResults)
+	router.GET("/api/screenshot", controller.Screenshot)
+	router.GET("/api/trace", controller.TraceUrl)
+
+	// Serve static files from the ./assets/screenshots directory
 	// http(s)://api.redirective.net/screenshots/{filename.png}
-	router.NotFound = http.FileServer(http.Dir("assets/"))
+	router.NotFound = http.StripPrefix("/screenshots", http.FileServer(http.Dir(r.conf.ScreenshotsPath)))
 
 	// cors.Default() setup the middleware with default options being
 	// all origins accepted with simple methods (GET, POST). See

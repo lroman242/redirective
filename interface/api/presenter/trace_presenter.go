@@ -27,5 +27,5 @@ func (t *tracePresenter) ResponseTraceResults(results *domain.TraceResults) *dom
 
 // ResponseScreenshot will change screenshot path to url
 func (t *tracePresenter) ResponseScreenshot(filename string) string {
-	return "https://redirective.net/assets/" + filename
+	return "https://redirective.net/screenshots/" + filename
 }
