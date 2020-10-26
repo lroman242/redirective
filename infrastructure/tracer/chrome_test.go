@@ -70,12 +70,12 @@ func TestChromeTracer_Trace(t *testing.T) {
 		t.Error(err)
 	}
 
-	redirects, err := chr.Trace(traceURL, "testScreenshot.png")
+	tr, err := chr.Trace(traceURL, "testScreenshot.png")
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(redirects) != 0 {
+	if len(tr.Redirects) != 0 {
 		t.Error("No redirects expected")
 	}
 }
@@ -93,15 +93,15 @@ func TestChromeTracer_Trace2(t *testing.T) {
 		t.Error(err)
 	}
 
-	redirects, err := chr.Trace(traceURL, "testScreenshot.png")
+	tr, err := chr.Trace(traceURL, "testScreenshot.png")
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(redirects) != 3 {
-		t.Errorf("Two redirects expected but get %d", len(redirects))
+	if len(tr.Redirects) != 3 {
+		t.Errorf("Two redirects expected but get %d", len(tr.Redirects))
 
-		for _, redir := range redirects {
+		for _, redir := range tr.Redirects {
 			t.Errorf("From %s -> To %s", redir.From.String(), redir.To.String())
 		}
 	}
