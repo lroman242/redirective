@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -57,16 +58,24 @@ type ChromeTracer interface {
 
 // ChromeTracer represent tracer based on google chrome debugging tools
 type chromeTracer struct {
+	chromePort             int
+	chromePath             string
 	size                   *ScreenSize
 	screenshotsStoragePath string
 	chromeProcess          *os.Process
 }
 
 func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterface, error) {
-	remote, err := godet.Connect("localhost:9222", false)
+	remote, err := godet.Connect("localhost:"+strconv.Itoa(ct.chromePort), false)
 	if err != nil {
+		log.Fatalf("Cannot connect to remote debugger: %s\n", err)
 		return nil, err
 	}
+
+	remote.CallbackEvent("RemoteDebugger.disconnected", func(params godet.Params) {
+		log.Println("Remote disconnected")
+		panic("Remote disconnected")
+	})
 
 	return remote, nil
 }
@@ -74,6 +83,7 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 // Close method will stop google-chrome process
 func (ct *chromeTracer) Close() error {
 	if err := ct.chromeProcess.Kill(); err != nil {
+		log.Fatalf("Close error: %s\n", err)
 		return err
 	}
 
@@ -87,11 +97,16 @@ func (ct *chromeTracer) ChromeProcess() *os.Process {
 
 // NewChromeTracer create new chrome tracer instance
 func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) *chromeTracer {
+	//TODO: get chrome port and path from func args
+	port := 9222
+	path := "/usr/bin/google-chrome"
+	//TODO: get chrome port and path from func args
+
 	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/77.0.3854.3 Chrome/77.0.3854.3 Safari/537.36"
-	cmd := exec.Command("/usr/bin/google-chrome",
+	cmd := exec.Command(path,
 		"--addr=localhost",
-		"--port=9222",
-		"--remote-debugging-port=9222",
+		"--port="+strconv.Itoa(port),
+		"--remote-debugging-port="+strconv.Itoa(port),
 		"--remote-debugging-address=0.0.0.0",
 		"--disable-extensions",
 		"--disable-gpu",
@@ -109,6 +124,8 @@ func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) *chromeTra
 	}
 
 	ct := &chromeTracer{
+		chromePort:             port,
+		chromePath:             path,
 		size:                   size,
 		screenshotsStoragePath: screenshotsStoragePath,
 		chromeProcess:          cmd.Process,
@@ -195,7 +212,12 @@ func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResul
 		panic(err)
 	}
 
-	defer debugger.Close()
+	defer func() {
+		err = debugger.Close()
+		if err != nil {
+			log.Printf("Cannot close debugger: %s \n\n", err)
+		}
+	}()
 
 	var redirects []*domain.Redirect
 
