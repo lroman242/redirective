@@ -1,5 +1,7 @@
 package logger
 
+//go:generate mockgen -package=mocks -destination=mocks/mock_logger.go -source=infrastructure/logger/logger.go Logger
+
 // Logger interface describe logger instance used in application to process logs
 type Logger interface {
 	Write([]byte) (int, error)

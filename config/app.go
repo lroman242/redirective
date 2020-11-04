@@ -83,6 +83,7 @@ func ParseConsole() *AppConfig {
 	}
 }
 
+//checkScreenshotsStorageDir - check if provided directory exists (or create new) and writeable
 func checkScreenshotsStorageDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err := os.MkdirAll(path, os.ModePerm)
@@ -99,6 +100,7 @@ func checkScreenshotsStorageDir(path string) error {
 	return nil
 }
 
+//isWritable - check if provided directory is writeable
 func isWritable(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {

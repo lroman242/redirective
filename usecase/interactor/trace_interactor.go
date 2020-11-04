@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const screenshotFileExtension = "png"
+
 // TraceInteractor represent interactor for actions related to trace results
 type TraceInteractor interface {
 	Trace(*url.URL, string) (*domain.TraceResults, error)
@@ -39,7 +41,7 @@ func NewTraceInteractor(tracer tracer.Tracer, presenter presenter.TracePresenter
 // Trace func will trace provided url
 // and will return trace results (including screenshot)
 func (ti *traceInteractor) Trace(url *url.URL, assetsFolderPath string) (*domain.TraceResults, error) {
-	results, err := ti.Tracer.Trace(url, assetsFolderPath+ti.randomScreenshotFileName())
+	results, err := ti.Tracer.Trace(url, assetsFolderPath+randomScreenshotFileName(screenshotFileExtension))
 	if err != nil {
 		ti.Log.Error(err)
 		return nil, err
@@ -48,7 +50,7 @@ func (ti *traceInteractor) Trace(url *url.URL, assetsFolderPath string) (*domain
 	id, err := ti.Repository.SaveTraceResults(results)
 	if err != nil {
 		ti.Log.Error(err)
-		return nil, err
+		return results, err
 	}
 	results.ID = id
 
@@ -62,16 +64,14 @@ func (ti *traceInteractor) Screenshot(url *url.URL, width int, height int, asset
 		Height: height,
 	}
 
-	path := assetsFolderPath + ti.randomScreenshotFileName()
+	path := assetsFolderPath + randomScreenshotFileName(screenshotFileExtension)
 	err := ti.Tracer.Screenshot(url, screenSize, path)
 	if err != nil {
 		ti.Log.Error(err)
 		return "", err
 	}
 
-	path = ti.Presenter.ResponseScreenshot(path)
-
-	return path, nil
+	return ti.Presenter.ResponseScreenshot(path), nil
 }
 
 // FindTrace function will search and return trace results using provided ID
@@ -85,7 +85,8 @@ func (ti *traceInteractor) FindTrace(id interface{}) (*domain.TraceResults, erro
 	return ti.Presenter.ResponseTraceResults(results), err
 }
 
-func (ti *traceInteractor) randomScreenshotFileName() string {
+// randomScreenshotFileName generate random file name with provided extension
+func randomScreenshotFileName(extension string) string {
 	var charset = "abcdefghijklmnopqrstuvwxyz" +
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -95,5 +96,5 @@ func (ti *traceInteractor) randomScreenshotFileName() string {
 		b[i] = charset[rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(charset))]
 	}
 
-	return string(b) + `.png`
+	return string(b) + "." + extension
 }

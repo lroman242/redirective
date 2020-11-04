@@ -72,6 +72,7 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 		return nil, err
 	}
 
+	//TODO: find if it's possible to restart chrome!
 	remote.CallbackEvent("RemoteDebugger.disconnected", func(params godet.Params) {
 		log.Println("Remote disconnected")
 		panic("Remote disconnected")
