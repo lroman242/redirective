@@ -2,43 +2,12 @@ package tracer
 
 import (
 	"encoding/json"
-	"log"
+	"github.com/raff/godet"
 	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/raff/godet"
 )
-
-func TestMain(m *testing.M) {
-	cmd := exec.Command("/usr/bin/google-chrome", "--addr=localhost", "--port=9222", "--remote-debugging-port=9222", "--remote-debugging-address=0.0.0.0", "--disable-extensions", "--disable-gpu", "--headless", "--hide-scrollbars", "--no-first-run", "--no-sandbox")
-
-	cmd.Stdout = os.Stdout
-
-	err := cmd.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("google-chrome headless runned with PID: %d\n", cmd.Process.Pid)
-	log.Println("google-chrome headless runned on 9222 port")
-
-	time.Sleep(1 * time.Second)
-
-	code := m.Run()
-
-	log.Printf("killing google-chrom PID %d\n", cmd.Process.Pid)
-	// Kill chrome:
-	if err := cmd.Process.Kill(); err != nil {
-		log.Fatal("failed to kill process: ", err)
-	}
-
-	os.Exit(code)
-}
 
 func TestNewChromeTracer(t *testing.T) {
 	size := &ScreenSize{
@@ -46,14 +15,18 @@ func TestNewChromeTracer(t *testing.T) {
 		Height: 1080,
 	}
 
-	assetsPath := "./assets"
+	screenshotsPath := "./assets/screenshots"
 
-	chr := NewChromeTracer(size, assetsPath)
-	if chr.screenshotsStoragePath != assetsPath {
+	chr := NewChromeTracer(size, screenshotsPath)
+	if chr.screenshotsStoragePath != screenshotsPath {
 		t.Error("Wrong assets path")
 	}
 	if chr.size != size {
 		t.Error("Wrong window size")
+	}
+	err := chr.Close()
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -75,8 +48,18 @@ func TestChromeTracer_Trace(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(tr.Redirects) != 0 {
-		t.Error("No redirects expected")
+	if tr != nil {
+		// only final page data
+		if len(tr.Redirects) != 1 {
+			t.Error("no redirects expected")
+		}
+	} else {
+		t.Error("invalid response received")
+	}
+
+	err = chr.Close()
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -104,6 +87,11 @@ func TestChromeTracer_Trace2(t *testing.T) {
 		for _, redir := range tr.Redirects {
 			t.Errorf("From %s -> To %s", redir.From.String(), redir.To.String())
 		}
+	}
+
+	err = chr.Close()
+	if err != nil {
+		t.Error(err)
 	}
 }
 

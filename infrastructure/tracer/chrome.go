@@ -210,7 +210,7 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResults, error) {
 	debugger, err := ct.initChromeRemoteDebugger()
 	if err != nil {
-		panic(err)
+		log.Panicf("Remote debugger is not awailable: %s",err)
 	}
 
 	defer func() {
@@ -234,9 +234,9 @@ func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResul
 		return nil, errors.New(errorMessageInvalidMainFrameID)
 	}
 
-	if len(rawRedirects) == 0 {
-		return nil, errors.New(`no data parsed`)
-	}
+	//if len(rawRedirects) == 0 {
+	//	return nil, errors.New(`no data parsed`)
+	//}
 
 	if rawRedirects, ok := rawRedirects[frameID]; ok {
 		for _, rawRedirect := range rawRedirects {
