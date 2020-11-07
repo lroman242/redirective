@@ -11,21 +11,27 @@ type TracePresenter interface {
 }
 
 type tracePresenter struct {
+	appDomain string
+	protocol  string
 }
 
 // NewTracePresenter will construct TracePresenter implementation
-func NewTracePresenter() TracePresenter {
-	return &tracePresenter{}
+func NewTracePresenter(appDomain string, protocol string) TracePresenter {
+	return &tracePresenter{
+		appDomain: appDomain,
+		protocol:  protocol,
+	}
 }
 
 // ResponseTraceResults will provide updated trace results
 func (t *tracePresenter) ResponseTraceResults(results *domain.TraceResults) *domain.TraceResults {
-	// TODO: update trace result screenshot path to url
+	results.Screenshot = t.ResponseScreenshot(results.Screenshot)
+	results.URL = t.protocol + "://" + t.appDomain + "/api/find/" + results.ID.(string)
 
 	return results
 }
 
 // ResponseScreenshot will change screenshot path to url
 func (t *tracePresenter) ResponseScreenshot(filename string) string {
-	return "https://redirective.net/screenshots/" + filename
+	return t.protocol + "://" + t.appDomain + "/screenshots/" + filename
 }

@@ -210,7 +210,7 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResults, error) {
 	debugger, err := ct.initChromeRemoteDebugger()
 	if err != nil {
-		log.Panicf("Remote debugger is not awailable: %s",err)
+		log.Panicf("Remote debugger is not awailable: %s", err)
 	}
 
 	defer func() {

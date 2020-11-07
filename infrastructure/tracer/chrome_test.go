@@ -5,6 +5,7 @@ import (
 	"github.com/raff/godet"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 )
@@ -37,13 +38,21 @@ func TestChromeTracer_Trace(t *testing.T) {
 	}
 
 	chr := NewChromeTracer(size, "./assets")
+	screenshotFile := "testScreenshot.png"
+	defer func() {
+		err := chr.Close()
+		if err != nil {
+			t.Error(err)
+		}
+		_ = os.Remove(screenshotFile)
+	}()
 
 	traceURL, err := url.Parse("https://www.google.com.ua")
 	if err != nil {
 		t.Error(err)
 	}
 
-	tr, err := chr.Trace(traceURL, "testScreenshot.png")
+	tr, err := chr.Trace(traceURL, screenshotFile)
 	if err != nil {
 		t.Error(err)
 	}
@@ -70,13 +79,25 @@ func TestChromeTracer_Trace2(t *testing.T) {
 	}
 
 	chr := NewChromeTracer(size, "./assets")
+	screenshotFile := "testScreenshot.png"
+	defer func() {
+		err := chr.Close()
+		if err != nil {
+			t.Log(err)
+		}
+
+		err = os.Remove(screenshotFile)
+		if err != nil {
+			t.Log(err)
+		}
+	}()
 
 	traceURL, err := url.Parse("http://google.com")
 	if err != nil {
 		t.Error(err)
 	}
 
-	tr, err := chr.Trace(traceURL, "testScreenshot.png")
+	tr, err := chr.Trace(traceURL, screenshotFile)
 	if err != nil {
 		t.Error(err)
 	}

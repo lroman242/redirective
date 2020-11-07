@@ -2,12 +2,14 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 )
 
 func initTestConfig() *AppConfig {
 	return &AppConfig{
+		AppDomain: "redirective.net",
 		Storage: &StorageConfig{
 			Host:     "testhost",
 			Port:     1234,
@@ -24,14 +26,41 @@ func initTestConfig() *AppConfig {
 			KeyPath:  "path/key.pem",
 		},
 		ScreenshotsPath: "screenshots/",
-		LogFilePath:     "logs/test.log",
+		LogsPath:        "logs/test.log",
 	}
 }
 
 func TestParseConsole(t *testing.T) {
 	testValues := initTestConfig()
 
-	os.Args = append(os.Args, "--logPath="+testValues.LogFilePath)
+	defer func(dir string) {
+		d, err := os.Open(dir)
+		if err != nil {
+			t.Log(err)
+		}
+
+		defer d.Close()
+
+		names, err := d.Readdirnames(-1)
+		if err != nil {
+			t.Log(err)
+		}
+
+		for _, name := range names {
+			err = os.RemoveAll(filepath.Join(dir, name))
+			if err != nil {
+				t.Log(err)
+			}
+		}
+
+		err = os.Remove(dir)
+		if err != nil {
+			t.Log(err)
+		}
+	}(testValues.ScreenshotsPath)
+
+	os.Args = append(os.Args, "--appDomain="+testValues.AppDomain)
+	os.Args = append(os.Args, "--logPath="+testValues.LogsPath)
 	os.Args = append(os.Args, "--screenshotsPath="+testValues.ScreenshotsPath)
 
 	os.Args = append(os.Args, "--host="+testValues.HTTPServer.Host)
@@ -48,8 +77,11 @@ func TestParseConsole(t *testing.T) {
 
 	appConf := ParseConsole()
 
-	if appConf.LogFilePath != testValues.LogFilePath {
-		t.Error("invalid value parsed for LogFilePath")
+	if appConf.AppDomain != testValues.AppDomain {
+		t.Error("invalid value parsed for AppDomain")
+	}
+	if appConf.LogsPath != testValues.LogsPath {
+		t.Error("invalid value parsed for LogsPath")
 	}
 	if appConf.ScreenshotsPath != testValues.ScreenshotsPath {
 		t.Error("invalid value parsed for ScreenshotsPath")

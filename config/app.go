@@ -11,11 +11,12 @@ import (
 
 // AppConfig describe configuration for all parts of application
 type AppConfig struct {
-	Storage *StorageConfig
+	AppDomain string
+	Storage   *StorageConfig
 	//Logger *LogConfig
 	HTTPServer      *HTTPServerConfig
 	ScreenshotsPath string
-	LogFilePath     string
+	LogsPath        string
 }
 
 //
@@ -34,6 +35,7 @@ type AppConfig struct {
 
 // ParseConsole function will parse config options from CLI arguments
 func ParseConsole() *AppConfig {
+	appDomain := flag.String("appDomain", "redirective.net", "Domain used to host application")
 	logPath := flag.String("logPath", "logs", "Path to the log file")
 
 	screenshotsStoragePath := flag.String("screenshotsPath", "assets/screenshots", "Path to directory where screenshots would be stored")
@@ -63,6 +65,7 @@ func ParseConsole() *AppConfig {
 	}
 
 	return &AppConfig{
+		AppDomain: *appDomain,
 		Storage: &StorageConfig{
 			Host:     *storageHost,
 			Port:     *storagePort,
@@ -79,7 +82,7 @@ func ParseConsole() *AppConfig {
 			KeyPath:  *keyFile,
 		},
 		ScreenshotsPath: *screenshotsStoragePath,
-		LogFilePath:     *logPath,
+		LogsPath:        *logPath,
 	}
 }
 

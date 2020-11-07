@@ -37,15 +37,15 @@ type Registry interface {
 }
 
 func NewRegistry(conf *config.AppConfig) Registry {
-	if _, err := os.Stat(conf.LogFilePath); os.IsNotExist(err) {
+	if _, err := os.Stat(conf.LogsPath); os.IsNotExist(err) {
 		// logs directory does not exist
-		err = os.Mkdir(conf.LogFilePath, 0755)
+		err = os.Mkdir(conf.LogsPath, 0755)
 		if err != nil {
-			panic(fmt.Sprintf("Logs dirrectory (%s) is not exists and couldn't be created. Error: %s", conf.LogFilePath, err))
+			panic(fmt.Sprintf("Logs dirrectory (%s) is not exists and couldn't be created. Error: %s", conf.LogsPath, err))
 		}
 	}
 
-	fl := logger.NewFileLogger(conf.LogFilePath)
+	fl := logger.NewFileLogger(conf.LogsPath)
 	log.SetOutput(fl)
 
 	mgdb, err := storage.NewMongoDB(conf.Storage)
@@ -90,7 +90,13 @@ func (r *registry) NewTracerRepository() repository.TraceRepository {
 }
 
 func (r *registry) NewTracePresenter() presenter.TracePresenter {
-	return ip.NewTracePresenter()
+	var protocol string
+	if r.conf.HTTPServer.HTTPS {
+		protocol = "https"
+	} else {
+		protocol = "http"
+	}
+	return ip.NewTracePresenter("r", protocol)
 }
 
 func (r *registry) NewHandler() http.Handler {

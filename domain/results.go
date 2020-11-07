@@ -5,4 +5,5 @@ type TraceResults struct {
 	ID         interface{} `json:"id,omitempty"`
 	Redirects  []*Redirect `json:"redirects"`
 	Screenshot string      `json:"screenshot"`
+	URL        string      `json:"url,omitempty"`
 }
