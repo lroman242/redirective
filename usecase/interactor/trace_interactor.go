@@ -13,6 +13,8 @@ import (
 
 const screenshotFileExtension = "png"
 
+//go:generate mockgen -package=mocks -destination=mocks/mock_trace_interactor.go -source=usecase/interactor/trace_interactor.go TraceInteractor
+
 // TraceInteractor represent interactor for actions related to trace results
 type TraceInteractor interface {
 	Trace(*url.URL, string) (*domain.TraceResults, error)

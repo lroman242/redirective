@@ -10,6 +10,7 @@ type TracePresenter interface {
 	ResponseScreenshot(string) string
 }
 
+// tracePresenter is implementation of TracePresenter interface
 type tracePresenter struct {
 	appDomain string
 	protocol  string

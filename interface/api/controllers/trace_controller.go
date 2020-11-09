@@ -125,6 +125,8 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 			Message:    fmt.Sprintf("an error occurred. error: %s", err),
 			StatusCode: http.StatusInternalServerError,
 			Data:       nil}).Failed(w)
+
+		return
 	}
 
 	(&Response{
@@ -146,6 +148,8 @@ func (tc *traceController) FindTraceResults(w http.ResponseWriter, r *http.Reque
 			Message:    fmt.Sprintf("an error occurred. error: %s", err),
 			StatusCode: http.StatusInternalServerError,
 			Data:       nil}).Failed(w)
+
+		return
 	}
 
 	(&Response{
