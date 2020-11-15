@@ -61,6 +61,8 @@ func (tc *traceController) TraceUrl(w http.ResponseWriter, r *http.Request, ps h
 			Message:    fmt.Sprintf("an error occurred. error: %s", err),
 			StatusCode: http.StatusInternalServerError,
 			Data:       nil}).Failed(w)
+
+		return
 	}
 
 	(&Response{
