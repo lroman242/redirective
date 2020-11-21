@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lroman242/redirective/config"
-	"github.com/lroman242/redirective/infrastructure/heartbeat"
 	"github.com/lroman242/redirective/infrastructure/logger"
 	"github.com/lroman242/redirective/infrastructure/storage"
 	"github.com/lroman242/redirective/infrastructure/tracer"
@@ -24,11 +23,10 @@ const defaultScreenWidth = 1920
 const defaultScreenHeight = 1080
 
 type registry struct {
-	conf      *config.AppConfig
-	storage   storage.Storage
-	logger    logger.Logger
-	tracer    tracer.Tracer
-	heartbeat heartbeat.HeartBeat
+	conf    *config.AppConfig
+	storage storage.Storage
+	logger  logger.Logger
+	tracer  tracer.Tracer
 }
 
 type Registry interface {

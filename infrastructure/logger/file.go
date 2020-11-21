@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const TraceLevel = 2
+
 type fileLogger struct {
 	logsDir  string
 	lock     sync.Mutex
@@ -14,7 +16,7 @@ type fileLogger struct {
 	fp       *os.File
 }
 
-func NewFileLogger(logsDirPath string) *fileLogger {
+func NewFileLogger(logsDirPath string) Logger {
 	if _, err := os.Stat(logsDirPath); os.IsNotExist(err) {
 		// logs directory does not exist
 		err = os.Mkdir(logsDirPath, 0755)
@@ -28,7 +30,7 @@ func NewFileLogger(logsDirPath string) *fileLogger {
 	}
 	l.filename = l.fileNameForNow()
 
-	err := l.Rotate()
+	err := l.rotate()
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +56,7 @@ func (l *fileLogger) Write(output []byte) (int, error) {
 	defer l.lock.Unlock()
 
 	if l.filename != l.fileNameForNow() {
-		err := l.Rotate()
+		err := l.rotate()
 		if err != nil {
 			panic(err)
 		}
@@ -64,7 +66,7 @@ func (l *fileLogger) Write(output []byte) (int, error) {
 }
 
 // Perform the actual act of rotating and reopening file.
-func (l *fileLogger) Rotate() (err error) {
+func (l *fileLogger) rotate() (err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -97,50 +99,50 @@ func (l *fileLogger) Rotate() (err error) {
 }
 
 func (l *fileLogger) Debugf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Infof(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Printf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("-") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("-") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Warnf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("warn") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("warning") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Errorf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Fatalf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprintf(format, data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Debug(data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Info(data ...interface{}) {
-	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Warn(data ...interface{}) {
-	l.Write([]byte(l.prefix("warn") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("warning") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Error(data ...interface{}) {
-	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Fatal(data ...interface{}) {
-	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
 }
 
 func (l *fileLogger) Panic(data ...interface{}) {
-	l.Write([]byte(l.prefix("panic") + NewStackTrace(fmt.Sprint(data...)).String() + "\n"))
+	l.Write([]byte(l.prefix("panic") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
 	panic(data)
 }

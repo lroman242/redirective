@@ -14,8 +14,8 @@ type StackTrace struct {
 
 // NewStackTrace function constructs a new `StackTrace` struct by using given panic
 // message, absolute path of the caller file and the line number.
-func NewStackTrace(msg string) *StackTrace {
-	_, file, line, _ := runtime.Caller(2)
+func NewStackTrace(msg string, lvl int) *StackTrace {
+	_, file, line, _ := runtime.Caller(lvl)
 	p, _ := os.Getwd()
 
 	return &StackTrace{
