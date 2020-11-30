@@ -222,8 +222,7 @@ func TestTraceInteractor_Screenshot_Success(t *testing.T) {
 	tracePresenter := mocks.NewMockTracePresenter(mockCtrl)
 	//check if TracePresenter called correctly
 	tracePresenter.EXPECT().ResponseScreenshot(gomock.Any()).Times(1).DoAndReturn(func(screenshot string) interface{} {
-		screenshot = screenshotPath
-		return strings.Replace(screenshot, assetsFolderPath, "https://redirective.net/screenshots/", 1)
+		return strings.Replace(screenshotPath, assetsFolderPath, "https://redirective.net/screenshots/", 1)
 	})
 
 	logger := mocks.NewMockLogger(mockCtrl)

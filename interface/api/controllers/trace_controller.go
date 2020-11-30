@@ -85,25 +85,28 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	var width int
-	var height int
+	var err error
 
+	var width int
 	widthStr := r.URL.Query().Get("width")
+
+	var height int
 	heightStr := r.URL.Query().Get("height")
+
 	if widthStr == "" || heightStr == "" {
 		width = defaultScreenWidth
 		height = defaultScreenHeight
-	}
-
-	width, err := strconv.Atoi(widthStr)
-	if err != nil {
-		width = defaultScreenWidth
-		height = defaultScreenHeight
 	} else {
-		height, err = strconv.Atoi(heightStr)
+		width, err = strconv.Atoi(widthStr)
 		if err != nil {
 			width = defaultScreenWidth
 			height = defaultScreenHeight
+		} else {
+			height, err = strconv.Atoi(heightStr)
+			if err != nil {
+				width = defaultScreenWidth
+				height = defaultScreenHeight
+			}
 		}
 	}
 

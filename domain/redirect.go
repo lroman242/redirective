@@ -1,3 +1,4 @@
+// domain package describe base models used in application
 package domain
 
 import (
@@ -6,7 +7,7 @@ import (
 	"time"
 )
 
-// Redirect type represent http redirect
+// Redirect type represent http redirect.
 type Redirect struct {
 	From               *url.URL               `json:"from"`
 	To                 *url.URL               `json:"to"`
@@ -20,7 +21,7 @@ type Redirect struct {
 }
 
 // NewRedirect combine data from http request and response to create
-// new `Redirect` instance
+// new `Redirect` instance.
 func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header, cookies []*http.Cookie, status int, initiator string) *Redirect {
 	return &Redirect{
 		From:            from,
@@ -33,7 +34,7 @@ func NewRedirect(from, to *url.URL, requestHeaders, responseHeaders *http.Header
 	}
 }
 
-// JSONRedirect used to transform Redirect type into json string
+// JSONRedirect used to transform Redirect type into json string.
 type JSONRedirect struct {
 	From               string                 `json:"from"`
 	To                 string                 `json:"to"`

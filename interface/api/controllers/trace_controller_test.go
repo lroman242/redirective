@@ -111,7 +111,7 @@ func TestTraceController_TraceUrl(t *testing.T) {
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/api/trace?url="+expectedStrURL, nil)
-	params := make(httprouter.Params, 0, 0)
+	params := make(httprouter.Params, 0)
 
 	controller := NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
 	controller.TraceUrl(response, request, params)
@@ -140,7 +140,7 @@ func TestTraceController_TraceUrl_InvalidURL_Error(t *testing.T) {
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/api/trace?url="+inputStrURL, nil)
-	params := make(httprouter.Params, 0, 0)
+	params := make(httprouter.Params, 0)
 
 	controller := NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
 	controller.TraceUrl(response, request, params)
@@ -169,7 +169,7 @@ func TestTraceController_TraceUrl_NoUrlProvided_Error(t *testing.T) {
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/api/trace?url="+inputStrURL, nil)
-	params := make(httprouter.Params, 0, 0)
+	params := make(httprouter.Params, 0)
 
 	controller := NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
 	controller.TraceUrl(response, request, params)
@@ -205,7 +205,7 @@ func TestTraceController_TraceUrl_TraceInteractor_Trace_Error(t *testing.T) {
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/api/trace?url="+expectedStrURL, nil)
-	params := make(httprouter.Params, 0, 0)
+	params := make(httprouter.Params, 0)
 
 	controller := NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
 	controller.TraceUrl(response, request, params)
@@ -241,7 +241,7 @@ func TestTraceController_Screenshot(t *testing.T) {
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/api/screenshot?url="+expectedStrURL+"&width="+strconv.Itoa(expectedWidth)+"&height="+strconv.Itoa(expectedHeight), nil)
-	params := make(httprouter.Params, 0, 0)
+	params := make(httprouter.Params, 0)
 
 	controller := NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
 	controller.Screenshot(response, request, params)
@@ -270,7 +270,7 @@ func TestTraceController_Screenshot_NoUrlProvided_Error(t *testing.T) {
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/api/screenshot?url="+inputStrURL, nil)
-	params := make(httprouter.Params, 0, 0)
+	params := make(httprouter.Params, 0)
 
 	controller := NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
 	controller.Screenshot(response, request, params)

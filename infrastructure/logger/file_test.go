@@ -9,20 +9,20 @@ import (
 
 func TestNewFileLogger(t *testing.T) {
 	expectedLogsPath := "test_logs"
-	logger := NewFileLogger(expectedLogsPath)
+	log := NewFileLogger(expectedLogsPath)
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	switch logger.(type) {
+	switch log.(type) {
 	case *fileLogger:
-		if logger.(*fileLogger).logsDir != expectedLogsPath {
+		if log.(*fileLogger).logsDir != expectedLogsPath {
 			t.Error("wrong logs dir path")
 		}
-		if _, err := os.Stat(logger.(*fileLogger).logsDir); os.IsNotExist(err) {
+		if _, err := os.Stat(log.(*fileLogger).logsDir); os.IsNotExist(err) {
 			t.Error("logs directory is not exists")
 		}
-		if _, err := os.Stat(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename); os.IsNotExist(err) {
+		if _, err := os.Stat(log.(*fileLogger).logsDir + "/" + log.(*fileLogger).filename); os.IsNotExist(err) {
 			t.Error("log file is not exists")
 		}
 	default:
@@ -163,8 +163,8 @@ func TestFileLogger_Fatal(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
-	if !strings.Contains(string(content), "fatal") {
-		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "fatal", string(content))
+	if !strings.Contains(string(content), "error") {
+		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
 	}
 }
 
@@ -192,8 +192,8 @@ func TestFileLogger_Panic(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
-	if !strings.Contains(string(content), "panic") {
-		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "panic", string(content))
+	if !strings.Contains(string(content), "error") {
+		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
 	}
 }
 
@@ -289,7 +289,7 @@ func TestFileLogger_Errorf(t *testing.T) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
 	if !strings.Contains(string(content), "error") {
-		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "fatal", string(content))
+		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
 	}
 }
 
@@ -312,8 +312,8 @@ func TestFileLogger_Fatalf(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
-	if !strings.Contains(string(content), "fatal") {
-		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "fatal", string(content))
+	if !strings.Contains(string(content), "error") {
+		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
 	}
 }
 

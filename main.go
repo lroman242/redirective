@@ -19,13 +19,12 @@ func main() {
 	// start http server
 	go func(handler http.Handler) {
 		log.Println("Listening http on 8080")
+
 		err := http.ListenAndServe(":8080", handler)
 		if err != nil {
 			log.Printf("ListenAndServe error: %s", err)
 		}
 	}(handler)
-
-	//TODO: run hearbeat
 
 	// awaiting to exit signal
 	ch := make(chan os.Signal, 1)

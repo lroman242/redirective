@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const TraceLevel = 2
+const traceLevel = 2
 
 type fileLogger struct {
 	logsDir  string
@@ -16,10 +16,11 @@ type fileLogger struct {
 	fp       *os.File
 }
 
+// NewFileLogger function build new instance of fileLogger which implements Logger interface
 func NewFileLogger(logsDirPath string) Logger {
 	if _, err := os.Stat(logsDirPath); os.IsNotExist(err) {
 		// logs directory does not exist
-		err = os.Mkdir(logsDirPath, 0755)
+		err = os.Mkdir(logsDirPath, 0750)
 		if err != nil {
 			panic(err)
 		}
@@ -50,7 +51,7 @@ func (l *fileLogger) prefix(level string) string {
 	return fmt.Sprintf("[%s][%s]: ", time.Now().Format("2006-01-02 15:04:05"), level)
 }
 
-// Write satisfies the io.Writer interface.
+// Write function satisfies the io.Writer interface.
 func (l *fileLogger) Write(output []byte) (int, error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -78,6 +79,7 @@ func (l *fileLogger) rotate() (err error) {
 			return
 		}
 	}
+
 	l.filename = l.fileNameForNow()
 
 	// Rename dest file if it already exists
@@ -98,51 +100,67 @@ func (l *fileLogger) rotate() (err error) {
 	return
 }
 
+// Debugf write formatted message with DEBUG level
 func (l *fileLogger) Debugf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format, data...), traceLevel).String() + "\n"))
 }
 
+// Infof write formatted message with INFO level
 func (l *fileLogger) Infof(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprintf(format, data...), traceLevel).String() + "\n"))
 }
 
+// Printf write formatted message
 func (l *fileLogger) Printf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("-") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("-") + NewStackTrace(fmt.Sprintf(format, data...), traceLevel).String() + "\n"))
 }
 
+// Warnf write formatted message with WARNING level
 func (l *fileLogger) Warnf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("warning") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("warning") + NewStackTrace(fmt.Sprintf(format, data...), traceLevel).String() + "\n"))
 }
 
+// Errorf write formatted message with ERROR level
 func (l *fileLogger) Errorf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprintf(format, data...), traceLevel).String() + "\n"))
 }
 
+// Fatalf write formatted message with ERROR level and exit
 func (l *fileLogger) Fatalf(format string, data ...interface{}) {
-	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprintf(format, data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprintf(format, data...), traceLevel).String() + "\n"))
+
+	os.Exit(1)
 }
 
+// Debugf write message with DEBUG level
 func (l *fileLogger) Debug(data ...interface{}) {
-	l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprint(data...), traceLevel).String() + "\n"))
 }
 
+// Info write message with INFO level
 func (l *fileLogger) Info(data ...interface{}) {
-	l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("info") + NewStackTrace(fmt.Sprint(data...), traceLevel).String() + "\n"))
 }
 
+// Warn write message with WARNING level
 func (l *fileLogger) Warn(data ...interface{}) {
-	l.Write([]byte(l.prefix("warning") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("warning") + NewStackTrace(fmt.Sprint(data...), traceLevel).String() + "\n"))
 }
 
+// Error write message with ERROR level
 func (l *fileLogger) Error(data ...interface{}) {
-	l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprint(data...), traceLevel).String() + "\n"))
 }
 
+// Fatal write message with ERROR level and exit
 func (l *fileLogger) Fatal(data ...interface{}) {
-	l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("fatal") + NewStackTrace(fmt.Sprint(data...), traceLevel).String() + "\n"))
+
+	os.Exit(1)
 }
 
+// Panic write message with ERROR level and throw panic exception
 func (l *fileLogger) Panic(data ...interface{}) {
-	l.Write([]byte(l.prefix("panic") + NewStackTrace(fmt.Sprint(data...), TraceLevel).String() + "\n"))
+	_, _ = l.Write([]byte(l.prefix("error") + NewStackTrace(fmt.Sprint(data...), traceLevel).String() + "\n"))
 	panic(data)
 }

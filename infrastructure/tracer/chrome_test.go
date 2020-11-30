@@ -19,12 +19,13 @@ func TestNewChromeTracer(t *testing.T) {
 	screenshotsPath := "./assets/screenshots"
 
 	chr := NewChromeTracer(size, screenshotsPath)
-	if chr.screenshotsStoragePath != screenshotsPath {
+	if chr.(*chromeTracer).screenshotsStoragePath != screenshotsPath {
 		t.Error("Wrong assets path")
 	}
-	if chr.size != size {
+	if chr.(*chromeTracer).size != size {
 		t.Error("Wrong window size")
 	}
+
 	err := chr.Close()
 	if err != nil {
 		t.Error(err)
@@ -44,6 +45,7 @@ func TestChromeTracer_Trace(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+
 		_ = os.Remove(screenshotFile)
 	}()
 

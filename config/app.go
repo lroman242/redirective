@@ -13,7 +13,7 @@ import (
 type AppConfig struct {
 	AppDomain string
 	Storage   *StorageConfig
-	//Logger *LogConfig
+	// Logger *LogConfig
 	HTTPServer      *HTTPServerConfig
 	ScreenshotsPath string
 	LogsPath        string
@@ -52,7 +52,7 @@ func ParseConsole() *AppConfig {
 	storageDatabase := flag.String("storageDatabase", "redirective", "Storage database name (default: redirective)")
 	storageTable := flag.String("storageTable", "results", "Storage table (default: results)")
 
-	//parse arguments
+	// parse arguments
 	flag.Parse()
 
 	err := checkScreenshotsStorageDir(*screenshotsStoragePath)

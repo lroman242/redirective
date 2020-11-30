@@ -20,6 +20,8 @@ const setCookieHeaderName = "set-cookie"
 const documentParamName = "Document"
 
 const (
+	screenshotDelay                                     = 3
+	traceDelay                                          = 3
 	errorMessageInvalidMainFrameID                      = "invalid mainframe id"
 	errorMessageNoResponseFromMainFrame                 = "no responses found for mainframe"
 	errorMessageRedirectResponseNotExists               = "invalid redirect. `redirectResponse` param not exists"
@@ -56,7 +58,7 @@ type ChromeTracer interface {
 	Close() error
 }
 
-// ChromeTracer represent tracer based on google chrome debugging tools
+// chromeTracer represent tracer based on google chrome debugging tools
 type chromeTracer struct {
 	chromePort             int
 	chromePath             string
@@ -69,6 +71,7 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 	remote, err := godet.Connect("localhost:"+strconv.Itoa(ct.chromePort), false)
 	if err != nil {
 		log.Fatalf("Cannot connect to remote debugger: %s\n", err)
+
 		return nil, err
 	}
 
@@ -85,6 +88,7 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 func (ct *chromeTracer) Close() error {
 	if err := ct.chromeProcess.Kill(); err != nil {
 		log.Fatalf("Close error: %s\n", err)
+
 		return err
 	}
 
@@ -97,17 +101,14 @@ func (ct *chromeTracer) ChromeProcess() *os.Process {
 }
 
 // NewChromeTracer create new chrome tracer instance
-func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) *chromeTracer {
-	//TODO: get chrome port and path from func args
-	port := 9222
-	path := "/usr/bin/google-chrome"
+func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) ChromeTracer {
 	//TODO: get chrome port and path from func args
 
 	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/77.0.3854.3 Chrome/77.0.3854.3 Safari/537.36"
-	cmd := exec.Command(path,
+	cmd := exec.Command("/usr/bin/google-chrome",
 		"--addr=localhost",
-		"--port="+strconv.Itoa(port),
-		"--remote-debugging-port="+strconv.Itoa(port),
+		"--port=9222",
+		"--remote-debugging-port=9222",
 		"--remote-debugging-address=0.0.0.0",
 		"--disable-extensions",
 		"--disable-gpu",
@@ -125,8 +126,8 @@ func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) *chromeTra
 	}
 
 	ct := &chromeTracer{
-		chromePort:             port,
-		chromePath:             path,
+		//chromePort:             port,
+		//chromePath:             path,
 		size:                   size,
 		screenshotsStoragePath: screenshotsStoragePath,
 		chromeProcess:          cmd.Process,
@@ -195,7 +196,7 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 		return frameID, fmt.Errorf("`Navigate` failed. %s", err)
 	}
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * traceDelay)
 
 	// take a screenshot
 	err = debugger.SaveScreenshot(filePath, 0644, 100, true)
@@ -275,7 +276,9 @@ func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, filePath stri
 		panic(err)
 	}
 
-	defer debugger.Close()
+	defer func() {
+		_ = debugger.Close()
+	}()
 
 	err = debugger.EnableRequestInterception(true)
 	if err != nil {
@@ -312,7 +315,7 @@ func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, filePath stri
 		return fmt.Errorf("`Navigate` failed. %s", err)
 	}
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * screenshotDelay)
 
 	// take a screenshot
 	err = debugger.SaveScreenshot(filePath, 0644, 100, true)

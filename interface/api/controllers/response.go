@@ -1,4 +1,3 @@
-// Package response implements methods to create common app http response
 package controllers
 
 import (

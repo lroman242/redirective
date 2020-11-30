@@ -32,6 +32,7 @@ func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s", conf.User, conf.Password, conf.Host, strconv.Itoa(conf.Port))))
 	if err != nil {
 		log.Printf("mongodb connection failed. error: %s", err)
+
 		return nil, err
 	}
 
@@ -39,6 +40,7 @@ func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
 		log.Printf("mongodb ping failed. error: %s", err)
+
 		return nil, err
 	}
 
@@ -49,6 +51,7 @@ func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 // SaveTraceResults function used to save domain.TraceResults into storage
 func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface{}, error) {
 	ctx, _ := context.WithTimeout(context.Background(), queryTimeout*time.Second)
+
 	res, err := m.collection.InsertOne(ctx, traceResults)
 	if err != nil {
 		return nil, err
@@ -76,9 +79,10 @@ func (m *MongoDB) FindTraceResults(id interface{}) (*domain.TraceResults, error)
 
 	results := &domain.TraceResults{}
 	ctx, _ := context.WithTimeout(context.Background(), queryTimeout*time.Second)
+
 	err = m.collection.FindOne(ctx, bson.M{"_id": ID}).Decode(results)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("mongodb reulsts decode failed. error: %s \n", err))
+		return nil, fmt.Errorf("mongodb reulsts decode failed. error: %s \n", err)
 	}
 
 	return results, nil
