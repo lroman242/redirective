@@ -1,7 +1,7 @@
+// Package config provide classes and functions to parse and prepare for use all application options
 package config
 
 import (
-	"errors"
 	"flag"
 	"log"
 	"os"
@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-// AppConfig describe configuration for all parts of application
+// AppConfig describe configuration for all parts of application.
 type AppConfig struct {
 	AppDomain string
 	Storage   *StorageConfig
@@ -33,7 +33,7 @@ type AppConfig struct {
 //}
 //
 
-// ParseConsole function will parse config options from CLI arguments
+// ParseConsole function will parse config options from CLI arguments.
 func ParseConsole() *AppConfig {
 	appDomain := flag.String("appDomain", "redirective.net", "Domain used to host application")
 	logPath := flag.String("logPath", "logs", "Path to the log file")
@@ -86,7 +86,7 @@ func ParseConsole() *AppConfig {
 	}
 }
 
-//checkScreenshotsStorageDir - check if provided directory exists (or create new) and writeable
+// checkScreenshotsStorageDir - check if provided directory exists (or create new) and writeable.
 func checkScreenshotsStorageDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err := os.MkdirAll(path, os.ModePerm)
@@ -103,7 +103,7 @@ func checkScreenshotsStorageDir(path string) error {
 	return nil
 }
 
-//isWritable - check if provided directory is writeable
+// isWritable - check if provided directory is writeable.
 func isWritable(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -111,22 +111,59 @@ func isWritable(path string) (bool, error) {
 	}
 
 	if !info.IsDir() {
-		return false, errors.New("path isn't a directory")
+		return false, &PathIsNotDirError{}
 	}
 
 	// Check if the user bit is enabled in file permission
 	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
-		return false, errors.New("write permission bit is not set on this file for user")
+		return false, &NoWritePermissionsForUser{}
 	}
 
 	var stat syscall.Stat_t
 	if err = syscall.Stat(path, &stat); err != nil {
-		return false, errors.New("unable to get stat. error " + err.Error())
+		return false, &UnableToGetStatError{Err: err}
 	}
 
 	if uint32(os.Geteuid()) != stat.Uid {
-		return false, errors.New("user doesn't have permission to write to this directory")
+		return false, &NoPermissionsToWriteInDirError{}
 	}
 
 	return true, nil
+}
+
+// PathIsNotDirError describe error that occurs when wrong path to log dir provided to the AppConfig.
+type PathIsNotDirError struct {
+}
+
+// Error function return error message.
+func (e *PathIsNotDirError) Error() string {
+	return `path isn't a directory`
+}
+
+// NoWritePermissionsForUser describe error that occurs when application has no permissions to write in log file.
+type NoWritePermissionsForUser struct {
+}
+
+// Error function return error message.
+func (e *NoWritePermissionsForUser) Error() string {
+	return `write permission bit is not set on this file for user`
+}
+
+// UnableToGetStatError describe error that occurs when application cannot get system information about logs directory.
+type UnableToGetStatError struct {
+	Err error
+}
+
+// Error function return error message.
+func (e *UnableToGetStatError) Error() string {
+	return "unable to get stat. error: " + e.Err.Error()
+}
+
+// NoPermissionsToWriteInDirError describe error that occurs when application has no permissions to write in logs directory.
+type NoPermissionsToWriteInDirError struct {
+}
+
+// Error function return error message.
+func (e *NoPermissionsToWriteInDirError) Error() string {
+	return `user doesn't have permission to write to this directory`
 }

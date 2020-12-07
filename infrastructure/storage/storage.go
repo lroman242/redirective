@@ -1,3 +1,4 @@
+//storage package provide access to database and implement repository interface
 package storage
 
 import "github.com/lroman242/redirective/domain"

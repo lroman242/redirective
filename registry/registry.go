@@ -1,7 +1,12 @@
+// Package registry contains functions to initialize application services (web server, logger, etc)
 package registry
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/lroman242/redirective/config"
 	"github.com/lroman242/redirective/infrastructure/logger"
@@ -14,13 +19,12 @@ import (
 	"github.com/lroman242/redirective/usecase/presenter"
 	"github.com/lroman242/redirective/usecase/repository"
 	"github.com/rs/cors"
-	"log"
-	"net/http"
-	"os"
 )
 
-const defaultScreenWidth = 1920
-const defaultScreenHeight = 1080
+const (
+	defaultScreenWidth  = 1920
+	defaultScreenHeight = 1080
+)
 
 type registry struct {
 	conf    *config.AppConfig
@@ -29,17 +33,17 @@ type registry struct {
 	tracer  tracer.Tracer
 }
 
-// Registry interface describe struct which should build main application parts
+// Registry interface describe struct which should build main application parts.
 type Registry interface {
 	NewHandler() http.Handler
 	NewTraceController() controllers.TraceController
 }
 
-// NewRegistry function initialize new Registry instance
+// NewRegistry function initialize new Registry instance.
 func NewRegistry(conf *config.AppConfig) Registry {
 	if _, err := os.Stat(conf.LogsPath); os.IsNotExist(err) {
 		// logs directory does not exist
-		err = os.Mkdir(conf.LogsPath, 0750)
+		err = os.Mkdir(conf.LogsPath, 0o750)
 		if err != nil {
 			panic(fmt.Sprintf("Logs dirrectory (%s) is not exists and couldn't be created. Error: %s", conf.LogsPath, err))
 		}
@@ -55,7 +59,7 @@ func NewRegistry(conf *config.AppConfig) Registry {
 
 	if _, err := os.Stat(conf.ScreenshotsPath); os.IsNotExist(err) {
 		// logs directory does not exist
-		err = os.Mkdir(conf.ScreenshotsPath, 0750)
+		err = os.Mkdir(conf.ScreenshotsPath, 0o750)
 		if err != nil {
 			panic(fmt.Sprintf("Screenshots dirrectory (%s) is not exists and couldn't be created. Error: %s", conf.ScreenshotsPath, err))
 		}
@@ -74,22 +78,22 @@ func NewRegistry(conf *config.AppConfig) Registry {
 	}
 }
 
-// NewTraceController function will build controllers.TraceController instance
+// NewTraceController function will build controllers.TraceController instance.
 func (r *registry) NewTraceController() controllers.TraceController {
 	return controllers.NewTraceController(r.NewTraceInteractor(), r.conf.ScreenshotsPath, r.logger)
 }
 
-// NewTraceInteractor function will build interactor.TraceInteractor instance
+// NewTraceInteractor function will build interactor.TraceInteractor instance.
 func (r *registry) NewTraceInteractor() interactor.TraceInteractor {
 	return interactor.NewTraceInteractor(r.tracer, r.NewTracePresenter(), r.NewTracerRepository(), r.logger)
 }
 
-// NewTracerRepository function will build new repository.TraceRepository instance
+// NewTracerRepository function will build new repository.TraceRepository instance.
 func (r *registry) NewTracerRepository() repository.TraceRepository {
 	return ir.NewTraceRepository(r.storage)
 }
 
-// NewTracePresenter function will build new presenter.TracePresenter instance
+// NewTracePresenter function will build new presenter.TracePresenter instance.
 func (r *registry) NewTracePresenter() presenter.TracePresenter {
 	var protocol string
 	if r.conf.HTTPServer.HTTPS {
@@ -101,7 +105,7 @@ func (r *registry) NewTracePresenter() presenter.TracePresenter {
 	return ip.NewTracePresenter("r", protocol)
 }
 
-// NewHandler will build new http.Handler with applied routes
+// NewHandler will build new http.Handler with applied routes.
 func (r *registry) NewHandler() http.Handler {
 	router := httprouter.New()
 	c := cors.New(cors.Options{
@@ -116,7 +120,7 @@ func (r *registry) NewHandler() http.Handler {
 	// add routes
 	router.GET("/api/find/:id", controller.FindTraceResults)
 	router.GET("/api/screenshot", controller.Screenshot)
-	router.GET("/api/trace", controller.TraceUrl)
+	router.GET("/api/trace", controller.TraceURL)
 
 	// Serve static files from the ./assets/screenshots directory
 	// http(s)://api.redirective.net/screenshots/{filename.png}

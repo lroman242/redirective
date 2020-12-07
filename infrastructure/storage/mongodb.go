@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/lroman242/redirective/config"
 	"github.com/lroman242/redirective/domain"
@@ -28,16 +27,20 @@ type MongoDB struct {
 // NewMongoDB function will create new MongoDB (implements Storage interface)
 // instance according to provided StorageConfig
 func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
-	ctx, _ := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s", conf.User, conf.Password, conf.Host, strconv.Itoa(conf.Port))))
+	ctxConnect, cancelFuncConnect := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancelFuncConnect()
+
+	client, err := mongo.Connect(ctxConnect, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s", conf.User, conf.Password, conf.Host, strconv.Itoa(conf.Port))))
 	if err != nil {
 		log.Printf("mongodb connection failed. error: %s", err)
 
 		return nil, err
 	}
 
-	ctx, _ = context.WithTimeout(context.Background(), pingTimeout*time.Second)
-	err = client.Ping(ctx, readpref.Primary())
+	ctxPing, cancelFuncPing := context.WithTimeout(context.Background(), pingTimeout*time.Second)
+	defer cancelFuncPing()
+
+	err = client.Ping(ctxPing, readpref.Primary())
 	if err != nil {
 		log.Printf("mongodb ping failed. error: %s", err)
 
@@ -45,12 +48,14 @@ func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 	}
 
 	collection := client.Database(conf.Database).Collection(conf.Table)
+
 	return &MongoDB{collection: collection}, nil
 }
 
 // SaveTraceResults function used to save domain.TraceResults into storage
 func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface{}, error) {
-	ctx, _ := context.WithTimeout(context.Background(), queryTimeout*time.Second)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), queryTimeout*time.Second)
+	defer cancelFunc()
 
 	res, err := m.collection.InsertOne(ctx, traceResults)
 	if err != nil {
@@ -63,22 +68,24 @@ func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface
 // FindTraceResults function used to find domain.TraceResults into storage using ID
 func (m *MongoDB) FindTraceResults(id interface{}) (*domain.TraceResults, error) {
 	var ID primitive.ObjectID
+
 	var err error
 
-	switch id.(type) {
+	switch tp := id.(type) {
 	case primitive.ObjectID:
-		ID = id.(primitive.ObjectID)
+		ID = tp
 	case string:
-		ID, err = primitive.ObjectIDFromHex(id.(string))
+		ID, err = primitive.ObjectIDFromHex(tp)
 		if err != nil {
 			return nil, err
 		}
 	default:
-		return nil, errors.New("invalid id type")
+		return nil, &InvalidIDTypeError{}
 	}
 
 	results := &domain.TraceResults{}
-	ctx, _ := context.WithTimeout(context.Background(), queryTimeout*time.Second)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), queryTimeout*time.Second)
+	defer cancelFunc()
 
 	err = m.collection.FindOne(ctx, bson.M{"_id": ID}).Decode(results)
 	if err != nil {

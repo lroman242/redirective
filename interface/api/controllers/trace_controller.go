@@ -14,7 +14,7 @@ const defaultScreenWidth = 1920
 const defaultScreenHeight = 1080
 
 type TraceController interface {
-	TraceUrl(http.ResponseWriter, *http.Request, httprouter.Params)
+	TraceURL(http.ResponseWriter, *http.Request, httprouter.Params)
 	Screenshot(http.ResponseWriter, *http.Request, httprouter.Params)
 	FindTraceResults(http.ResponseWriter, *http.Request, httprouter.Params)
 }
@@ -25,11 +25,12 @@ type traceController struct {
 	log             logger.Logger
 }
 
+// NewTraceController
 func NewTraceController(ti interactor.TraceInteractor, assetsPath string, log logger.Logger) TraceController {
 	return &traceController{ti, assetsPath, log}
 }
 
-func (tc *traceController) TraceUrl(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (tc *traceController) TraceURL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	urlToTrace := r.URL.Query().Get("url")
 	if urlToTrace == "" {
 		(&Response{
@@ -88,21 +89,19 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 	var err error
 
 	var width int
-	widthStr := r.URL.Query().Get("width")
 
 	var height int
-	heightStr := r.URL.Query().Get("height")
 
-	if widthStr == "" || heightStr == "" {
+	if r.URL.Query().Get("width") == "" || r.URL.Query().Get("height") == "" {
 		width = defaultScreenWidth
 		height = defaultScreenHeight
 	} else {
-		width, err = strconv.Atoi(widthStr)
+		width, err = strconv.Atoi(r.URL.Query().Get("width"))
 		if err != nil {
 			width = defaultScreenWidth
 			height = defaultScreenHeight
 		} else {
-			height, err = strconv.Atoi(heightStr)
+			height, err = strconv.Atoi(r.URL.Query().Get("height"))
 			if err != nil {
 				width = defaultScreenWidth
 				height = defaultScreenHeight
@@ -122,7 +121,7 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	screenshotUrl, err := tc.traceInteractor.Screenshot(targetURL, width, height, tc.assetsPath)
+	screenshotURL, err := tc.traceInteractor.Screenshot(targetURL, width, height, tc.assetsPath)
 	if err != nil {
 		tc.log.Error(err)
 		(&Response{
@@ -138,7 +137,7 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 		Status:     true,
 		Message:    "url traced",
 		StatusCode: http.StatusOK,
-		Data:       screenshotUrl,
+		Data:       screenshotURL,
 	}).Success(w)
 }
 

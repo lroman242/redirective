@@ -126,7 +126,7 @@ func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) ChromeTrac
 	}
 
 	ct := &chromeTracer{
-		//chromePort:             port,
+		chromePort: 9222,
 		//chromePath:             path,
 		size:                   size,
 		screenshotsStoragePath: screenshotsStoragePath,
@@ -155,53 +155,9 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 		}
 	})
 
-	// create new tab
-	tab, _ := debugger.NewTab("")
-	defer func(tab *godet.Tab) {
-		err = debugger.CloseTab(tab)
-		if err != nil {
-			log.Println(fmt.Errorf("`CloseTab` failed. %s", err))
-		}
-	}(tab)
-
-	err = debugger.NetworkEvents(true)
+	frameID, err = newTab(debugger, url, ct.size, filePath)
 	if err != nil {
-		return frameID, fmt.Errorf("`NetworkEvents failed. %s", err)
-	}
-
-	// navigate in existing tab
-	err = debugger.ActivateTab(tab)
-	if err != nil {
-		return frameID, fmt.Errorf("`ActivateTab` failed. %s", err)
-	}
-
-	// re-enable events when changing active tab
-	err = debugger.AllEvents(true) // enable all events
-	if err != nil {
-		return frameID, fmt.Errorf("`AllEvents` failed. %s", err)
-	}
-
-	err = debugger.SetDeviceMetricsOverride(ct.size.Width, ct.size.Height, 0, false, false)
-	if err != nil {
-		return frameID, fmt.Errorf("set screen size error: %s", err)
-	}
-
-	err = debugger.SetVisibleSize(ct.size.Width, ct.size.Height)
-	if err != nil {
-		return frameID, fmt.Errorf("set visibility size error: %s", err)
-	}
-
-	frameID, err = debugger.Navigate(url.String())
-	if err != nil {
-		return frameID, fmt.Errorf("`Navigate` failed. %s", err)
-	}
-
-	time.Sleep(time.Second * traceDelay)
-
-	// take a screenshot
-	err = debugger.SaveScreenshot(filePath, 0644, 100, true)
-	if err != nil {
-		return frameID, fmt.Errorf("cannot capture screenshot: %s", err)
+		return frameID, fmt.Errorf("`newTab` failed. %s\n", err)
 	}
 
 	return frameID, nil
@@ -282,47 +238,13 @@ func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, filePath stri
 
 	err = debugger.EnableRequestInterception(true)
 	if err != nil {
-		return fmt.Errorf("`EnableRequestInterception` failed. %s", err)
+		return fmt.Errorf("`EnableRequestInterception` failed. %s\n", err)
 	}
 
-	// create new tab
-	tab, _ := debugger.NewTab(url.String())
-	defer func(tab *godet.Tab) {
-		err = debugger.CloseTab(tab)
-		if err != nil {
-			log.Println(fmt.Errorf("`CloseTab` failed. %s", err))
-		}
-	}(tab)
-
-	// navigate in existing tab
-	err = debugger.ActivateTab(tab)
+	_, err = newTab(debugger, url, size, filePath)
 	if err != nil {
-		return fmt.Errorf("`ActivateTab` failed. %s", err)
+		return fmt.Errorf("`newTab` failed. %s\n", err)
 	}
-
-	err = debugger.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
-	if err != nil {
-		return fmt.Errorf("set screen size error: %s", err)
-	}
-
-	err = debugger.SetVisibleSize(size.Width, size.Height)
-	if err != nil {
-		return fmt.Errorf("set visibility size error: %s", err)
-	}
-
-	_, err = debugger.Navigate(url.String())
-	if err != nil {
-		return fmt.Errorf("`Navigate` failed. %s", err)
-	}
-
-	time.Sleep(time.Second * screenshotDelay)
-
-	// take a screenshot
-	err = debugger.SaveScreenshot(filePath, 0644, 100, true)
-	if err != nil {
-		return fmt.Errorf("cannot capture screenshot: %s", err)
-	}
-	//time.Sleep(time.Second)
 
 	return nil
 }
@@ -460,4 +382,57 @@ func pareseMainResponseFromRaw(rawResponses godet.Params) (*domain.Redirect, err
 	redirect := domain.NewRedirect(&url.URL{}, to, &requestHeaders, &responseHeaders, cookies, status, "")
 
 	return redirect, nil
+}
+
+func newTab(debugger ChromeRemoteDebuggerInterface, url *url.URL, size *ScreenSize, filePath string) (string, error) {
+	// create new tab
+	tab, _ := debugger.NewTab(url.String())
+	defer func(tab *godet.Tab) {
+		err := debugger.CloseTab(tab)
+		if err != nil {
+			log.Println(fmt.Errorf("`CloseTab` failed. %s", err))
+		}
+	}(tab)
+
+	err := debugger.NetworkEvents(true)
+	if err != nil {
+		return ``, fmt.Errorf("`NetworkEvents failed. %s", err)
+	}
+
+	// navigate in existing tab
+	err = debugger.ActivateTab(tab)
+	if err != nil {
+		return ``, fmt.Errorf("`ActivateTab` failed. %s", err)
+	}
+
+	// re-enable events when changing active tab
+	err = debugger.AllEvents(true) // enable all events
+	if err != nil {
+		return ``, fmt.Errorf("`AllEvents` failed. %s", err)
+	}
+
+	err = debugger.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
+	if err != nil {
+		return ``, fmt.Errorf("set screen size error: %s", err)
+	}
+
+	err = debugger.SetVisibleSize(size.Width, size.Height)
+	if err != nil {
+		return ``, fmt.Errorf("set visibility size error: %s", err)
+	}
+
+	frameId, err := debugger.Navigate(url.String())
+	if err != nil {
+		return frameId, fmt.Errorf("`Navigate` failed. %s", err)
+	}
+
+	time.Sleep(time.Second * screenshotDelay)
+
+	// take a screenshot
+	err = debugger.SaveScreenshot(filePath, 0644, 100, true)
+	if err != nil {
+		return frameId, fmt.Errorf("cannot capture screenshot: %s", err)
+	}
+
+	return frameId, nil
 }

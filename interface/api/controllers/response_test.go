@@ -1,4 +1,4 @@
-package controllers
+package controllers_test
 
 import (
 	"encoding/json"
@@ -6,16 +6,20 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/lroman242/redirective/interface/api/controllers"
 )
 
-const jsonMimeType = "application/json"
-const stringTestValue1 = "testVal1"
-const stringTestValue2 = "testVal2"
-const stringTestMessage = "Message"
+const (
+	jsonMimeType      = "application/json"
+	stringTestValue1  = "testVal1"
+	stringTestValue2  = "testVal2"
+	stringTestMessage = "Message"
+)
 
 func TestResponse_Failed(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
-	response := &Response{}
+	response := &controllers.Response{}
 
 	response.Failed(responseWriter)
 
@@ -29,7 +33,7 @@ func TestResponse_Failed(t *testing.T) {
 
 	body := responseWriter.Body
 
-	unmarshalResponse := &Response{}
+	unmarshalResponse := &controllers.Response{}
 
 	readBuf, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -60,7 +64,7 @@ func TestResponse_Failed(t *testing.T) {
 
 func TestResponse_Failed_With_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
-	response := &Response{true, stringTestMessage, http.StatusNotFound, []string{stringTestValue1, stringTestValue2}}
+	response := &controllers.Response{Status: true, Message: stringTestMessage, StatusCode: http.StatusNotFound, Data: []string{stringTestValue1, stringTestValue2}}
 
 	response.Failed(responseWriter)
 
@@ -74,7 +78,7 @@ func TestResponse_Failed_With_Data(t *testing.T) {
 
 	body := responseWriter.Body
 
-	unmarshalResponse := &Response{}
+	unmarshalResponse := &controllers.Response{}
 
 	readBuf, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -108,7 +112,7 @@ func TestResponse_Failed_With_Data(t *testing.T) {
 
 func TestResponse_Success(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
-	response := &Response{}
+	response := &controllers.Response{}
 
 	response.Success(responseWriter)
 
@@ -122,7 +126,7 @@ func TestResponse_Success(t *testing.T) {
 
 	body := responseWriter.Body
 
-	unmarshalResponse := &Response{}
+	unmarshalResponse := &controllers.Response{}
 
 	readBuf, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -153,7 +157,7 @@ func TestResponse_Success(t *testing.T) {
 
 func TestResponse_Success_With_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
-	response := &Response{false, stringTestMessage, http.StatusAccepted, []string{stringTestValue1, stringTestValue2}}
+	response := &controllers.Response{Message: stringTestMessage, StatusCode: http.StatusAccepted, Data: []string{stringTestValue1, stringTestValue2}}
 
 	response.Success(responseWriter)
 
@@ -167,7 +171,7 @@ func TestResponse_Success_With_Data(t *testing.T) {
 
 	body := responseWriter.Body
 
-	unmarshalResponse := &Response{}
+	unmarshalResponse := &controllers.Response{}
 
 	readBuf, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -208,7 +212,7 @@ func TestResponse_Success_With_Data(t *testing.T) {
 func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
 	data := make(chan int)
-	response := &Response{false, stringTestMessage, http.StatusAccepted, data}
+	response := &controllers.Response{Message: stringTestMessage, StatusCode: http.StatusAccepted, Data: data}
 
 	response.Success(responseWriter)
 
@@ -222,7 +226,7 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 
 	body := responseWriter.Body
 
-	unmarshalResponse := &Response{}
+	unmarshalResponse := &controllers.Response{}
 
 	readBuf, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -238,8 +242,8 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 		t.Error("expect Response.Status equal to false")
 	}
 
-	if unmarshalResponse.Message != notConvertedToJSONErrorMessage {
-		t.Errorf("expect Response.Message equal to `%s`", notConvertedToJSONErrorMessage)
+	if unmarshalResponse.Message != "response data cannot be converted to json" {
+		t.Error("expect Response.Message equal to `response data cannot be converted to json`")
 	}
 
 	if unmarshalResponse.StatusCode != http.StatusInternalServerError {
@@ -254,7 +258,7 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 	responseWriter := httptest.NewRecorder()
 	data := make(chan int)
-	response := &Response{true, stringTestMessage, http.StatusAccepted, data}
+	response := &controllers.Response{Status: true, Message: stringTestMessage, StatusCode: http.StatusAccepted, Data: data}
 
 	response.Failed(responseWriter)
 
@@ -268,7 +272,7 @@ func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 
 	body := responseWriter.Body
 
-	unmarshalResponse := &Response{}
+	unmarshalResponse := &controllers.Response{}
 
 	readBuf, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -284,8 +288,8 @@ func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 		t.Error("expect Response.Status equal to false")
 	}
 
-	if unmarshalResponse.Message != notConvertedToJSONErrorMessage {
-		t.Errorf("expect Response.Message equal to `%s`", notConvertedToJSONErrorMessage)
+	if unmarshalResponse.Message != "response data cannot be converted to json" {
+		t.Error("expect Response.Message equal to `response data cannot be converted to json`")
 	}
 
 	if unmarshalResponse.StatusCode != http.StatusInternalServerError {

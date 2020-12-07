@@ -1,4 +1,4 @@
-package domain
+package domain_test
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/lroman242/redirective/domain"
 )
 
 func TestNewRedirect(t *testing.T) {
@@ -32,7 +34,7 @@ func TestNewRedirect(t *testing.T) {
 	status := http.StatusFound
 	initiator := "test script"
 
-	redirect := NewRedirect(from, to, requestHeaders, responseHeaders, cookies /*body,*/, status, initiator)
+	redirect := domain.NewRedirect(from, to, requestHeaders, responseHeaders, cookies /*body,*/, status, initiator)
 	if redirect.Status != status {
 		t.Error("Invalid status on redirect creating")
 	}
@@ -77,7 +79,7 @@ func TestNewJSONCookie(t *testing.T) {
 
 	cookies := (&http.Response{Header: header}).Cookies()
 
-	jsonCookies := NewJSONCookies(cookies)
+	jsonCookies := domain.NewJSONCookies(cookies)
 
 	if len(jsonCookies) != 2 {
 		t.Errorf("expect to get 2 cookies but get %d", len(jsonCookies))
@@ -93,12 +95,12 @@ func TestNewJSONCookie(t *testing.T) {
 }
 
 func TestNewJSONRedirects(t *testing.T) {
-	redirects := []*Redirect{
+	redirects := []*domain.Redirect{
 		makeTestRedirect("http://google.com", "https://google.com"),
 		makeTestRedirect("https://google.com", "https://www.google.com"),
 	}
 
-	jsonRedirects := NewJSONRedirects(redirects)
+	jsonRedirects := domain.NewJSONRedirects(redirects)
 
 	if len(jsonRedirects) != len(redirects) {
 		t.Errorf("wrong redirects amount. expect %d but get %d", len(redirects), len(jsonRedirects))
@@ -153,7 +155,7 @@ func TestNewJSONRedirects(t *testing.T) {
 	}
 }
 
-func makeTestRedirect(from, to string) *Redirect {
+func makeTestRedirect(from, to string) *domain.Redirect {
 	requestHeaders := http.Header{}
 	requestHeaders.Add("Set-Cookie", fmt.Sprintf("foo1=bar1; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=%s; Path=/;", from))
 	requestHeaders.Add("Set-Cookie", fmt.Sprintf("foo2=bar2; expires=Sat, 28-Dec-2019 18:32:22 GMT; Max-Age=31536000; domain=%s; Path=/;", from))
@@ -167,5 +169,5 @@ func makeTestRedirect(from, to string) *Redirect {
 	fromURL, _ := url.ParseRequestURI(from)
 	toURL, _ := url.ParseRequestURI(to)
 
-	return NewRedirect(fromURL, toURL, &requestHeaders, &responseHeaders, cookies, 303, "other")
+	return domain.NewRedirect(fromURL, toURL, &requestHeaders, &responseHeaders, cookies, 303, "other")
 }

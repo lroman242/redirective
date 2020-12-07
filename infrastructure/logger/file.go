@@ -16,11 +16,11 @@ type fileLogger struct {
 	fp       *os.File
 }
 
-// NewFileLogger function build new instance of fileLogger which implements Logger interface
+// NewFileLogger function build new instance of fileLogger which implements Logger interface.
 func NewFileLogger(logsDirPath string) Logger {
 	if _, err := os.Stat(logsDirPath); os.IsNotExist(err) {
 		// logs directory does not exist
-		err = os.Mkdir(logsDirPath, 0750)
+		err = os.Mkdir(logsDirPath, 0o750)
 		if err != nil {
 			panic(err)
 		}
@@ -39,7 +39,8 @@ func NewFileLogger(logsDirPath string) Logger {
 	return l
 }
 
-func (l *fileLogger) logFilePath() string {
+// LogFilePath function return path to current log file.
+func (l *fileLogger) LogFilePath() string {
 	return l.logsDir + "/" + l.filename
 }
 
@@ -67,40 +68,41 @@ func (l *fileLogger) Write(output []byte) (int, error) {
 }
 
 // Perform the actual act of rotating and reopening file.
-func (l *fileLogger) rotate() (err error) {
+func (l *fileLogger) rotate() error {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	// Close existing file if open
 	if l.fp != nil {
-		err = l.fp.Close()
+		err := l.fp.Close()
 		l.fp = nil
+
 		if err != nil {
-			return
+			return err
 		}
 	}
 
 	l.filename = l.fileNameForNow()
 
 	// Rename dest file if it already exists
-	_, err = os.Stat(l.logFilePath())
+	_, err := os.Stat(l.LogFilePath())
 	if err == nil {
-		err = os.Rename(l.logFilePath(), l.logFilePath()+"."+time.Now().Format(time.RFC3339))
+		err = os.Rename(l.LogFilePath(), l.LogFilePath()+"."+time.Now().Format(time.RFC3339))
 		if err != nil {
-			return
+			return err
 		}
 	}
 
 	// Create a file.
-	l.fp, err = os.Create(l.logFilePath())
+	l.fp, err = os.Create(l.LogFilePath())
 	if err != nil {
 		panic(err)
 	}
 
-	return
+	return nil
 }
 
-// Debugf write formatted message with DEBUG level
+// Debugf write formatted message with DEBUG level.
 func (l *fileLogger) Debugf(format string, data ...interface{}) {
 	_, _ = l.Write([]byte(l.prefix("debug") + NewStackTrace(fmt.Sprintf(format, data...), traceLevel).String() + "\n"))
 }

@@ -14,15 +14,15 @@ func TestNewFileLogger(t *testing.T) {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	switch log.(type) {
+	switch tp := log.(type) {
 	case *fileLogger:
-		if log.(*fileLogger).logsDir != expectedLogsPath {
+		if tp.logsDir != expectedLogsPath {
 			t.Error("wrong logs dir path")
 		}
-		if _, err := os.Stat(log.(*fileLogger).logsDir); os.IsNotExist(err) {
+		if _, err := os.Stat(tp.logsDir); os.IsNotExist(err) {
 			t.Error("logs directory is not exists")
 		}
-		if _, err := os.Stat(log.(*fileLogger).logsDir + "/" + log.(*fileLogger).filename); os.IsNotExist(err) {
+		if _, err := os.Stat(tp.logsDir + "/" + tp.filename); os.IsNotExist(err) {
 			t.Error("log file is not exists")
 		}
 	default:

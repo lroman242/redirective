@@ -1,6 +1,6 @@
 package config
 
-// HTTPServerConfig describe configuration for web server
+// HTTPServerConfig describe configuration for web server.
 type HTTPServerConfig struct {
 	Host     string
 	Port     int

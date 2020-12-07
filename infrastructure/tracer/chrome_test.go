@@ -105,7 +105,7 @@ func TestChromeTracer_Trace2(t *testing.T) {
 	}
 
 	if len(tr.Redirects) != 3 {
-		t.Errorf("Two redirects expected but get %d", len(tr.Redirects))
+		t.Errorf("expected 2 redirects but get %d", len(tr.Redirects))
 
 		for _, redir := range tr.Redirects {
 			t.Errorf("From %s -> To %s", redir.From.String(), redir.To.String())

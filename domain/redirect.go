@@ -1,4 +1,4 @@
-// domain package describe base models used in application
+// Package domain describe base models used in application
 package domain
 
 import (
@@ -48,7 +48,7 @@ type JSONRedirect struct {
 }
 
 // NewJSONRedirects transform slice of `Redirect`s to slice of `jsonRedirect`s
-// using NewJSONRedirect function
+// using NewJSONRedirect function.
 func NewJSONRedirects(redirects []*Redirect) []*JSONRedirect {
 	jsonRedirects := make([]*JSONRedirect, 0, len(redirects))
 
@@ -60,7 +60,7 @@ func NewJSONRedirects(redirects []*Redirect) []*JSONRedirect {
 }
 
 // NewJSONRedirect function process `Redirect` to create
-// `jsonRedirect` instance which can be marshaled to json
+// `jsonRedirect` instance which can be marshaled to json.
 func NewJSONRedirect(r *Redirect) *JSONRedirect {
 	rRequestHeaders := make(map[string]string)
 	for k := range *r.RequestHeaders {
@@ -85,7 +85,7 @@ func NewJSONRedirect(r *Redirect) *JSONRedirect {
 	}
 }
 
-// JSONCookie transform http.Cookie into json string
+// JSONCookie transform http.Cookie into json string.
 type JSONCookie struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -106,7 +106,7 @@ type JSONCookie struct {
 }
 
 // NewJSONCookies convert slice of `http.Cookies` to the slice of `jsonCookies` type
-// using NewJSONCookie function
+// using NewJSONCookie function.
 func NewJSONCookies(cookies []*http.Cookie) []*JSONCookie {
 	jsonCookies := make([]*JSONCookie, 0, len(cookies))
 
@@ -118,7 +118,7 @@ func NewJSONCookies(cookies []*http.Cookie) []*JSONCookie {
 }
 
 // NewJSONCookie function is used to transform `http.Cookie` instance
-// to a `JSONCookie`, which contains custom json marshal rules
+// to a `JSONCookie`, which contains custom json marshal rules.
 func NewJSONCookie(cookie *http.Cookie) *JSONCookie {
 	return &JSONCookie{
 		Name:       cookie.Name,

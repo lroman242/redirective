@@ -1,24 +1,33 @@
-package interactor
+package interactor_test
 
 import (
-	"errors"
-	"github.com/golang/mock/gomock"
-	"github.com/lroman242/redirective/domain"
-	"github.com/lroman242/redirective/mocks"
 	"net/url"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/lroman242/redirective/domain"
+	"github.com/lroman242/redirective/mocks"
+	"github.com/lroman242/redirective/usecase/interactor"
 )
 
+const assetsFolderPath = "assets/screenshots/"
+
+type expectedError struct {
+}
+
+func (e *expectedError) Error() string {
+	return `expected error`
+}
+
 func TestTraceInteractor_Trace_Success(t *testing.T) {
-	assetsFolderPath := "assets/screenshots/"
 	u, err := url.Parse("http://ssyoutube.com")
 	if err != nil {
 		t.Errorf("Cannot parse error: %s\n", err)
 	}
 
-	expectedId := 13
+	expectedID := 13
 	tr := &domain.TraceResults{}
 
 	mockCtrl := gomock.NewController(t)
@@ -28,42 +37,41 @@ func TestTraceInteractor_Trace_Success(t *testing.T) {
 	tracer.EXPECT().Trace(u, gomock.Any()).Times(1).Return(tr, nil)
 
 	traceRepository := mocks.NewMockTraceRepository(mockCtrl)
-	traceRepository.EXPECT().SaveTraceResults(tr).Times(1).Return(expectedId, nil)
+	traceRepository.EXPECT().SaveTraceResults(tr).Times(1).Return(expectedID, nil)
 
 	tracePresenter := mocks.NewMockTracePresenter(mockCtrl)
-	//check if TracePresenter called correctly
+	// check if TracePresenter called correctly
 	tracePresenter.EXPECT().ResponseTraceResults(tr).Times(1).DoAndReturn(func(tr *domain.TraceResults) interface{} {
-		if tr.ID != expectedId {
+		if tr.ID != expectedID {
 			t.Error("invalid results ID provided to TracePresenter")
 		}
 
-		tr.ID = expectedId + 5
+		tr.ID = expectedID + 5
 
 		return tr
 	})
 
 	logger := mocks.NewMockLogger(mockCtrl)
 
-	ti := NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+	ti := interactor.NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
 
 	results, err := ti.Trace(u, assetsFolderPath)
 	if err != nil {
 		t.Errorf("Invalid response received. trace failed. Error: %s\n", err)
 	}
 
-	if results.ID != (expectedId + 5) {
+	if results.ID != (expectedID + 5) {
 		t.Error("unexpected result received")
 	}
 }
 
 func TestTraceInteractor_Trace_TracerError(t *testing.T) {
-	assetsFolderPath := "assets/screenshots/"
 	u, err := url.Parse("http://ssyoutube.com")
 	if err != nil {
 		t.Errorf("Cannot parse error: %s\n", err)
 	}
 
-	expectedError := errors.New("expected Tracer error")
+	expectedError := &expectedError{}
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -78,12 +86,13 @@ func TestTraceInteractor_Trace_TracerError(t *testing.T) {
 	logger := mocks.NewMockLogger(mockCtrl)
 	logger.EXPECT().Error(expectedError).Times(1)
 
-	ti := NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+	ti := interactor.NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
 
 	results, err := ti.Trace(u, assetsFolderPath)
 	if results != nil {
 		t.Error("unexpected response received. no results expected")
 	}
+
 	if err == nil {
 		t.Error("unexpected response received. an error expected")
 	} else {
@@ -94,13 +103,12 @@ func TestTraceInteractor_Trace_TracerError(t *testing.T) {
 }
 
 func TestTraceInteractor_Trace_TraceRepository_SaveTraceResults_Error(t *testing.T) {
-	assetsFolderPath := "assets/screenshots/"
 	u, err := url.Parse("http://ssyoutube.com")
 	if err != nil {
 		t.Errorf("Cannot parse error: %s\n", err)
 	}
 
-	expectedError := errors.New("expected TracerRepository error")
+	expectedError := &expectedError{}
 
 	tr := &domain.TraceResults{}
 
@@ -118,12 +126,13 @@ func TestTraceInteractor_Trace_TraceRepository_SaveTraceResults_Error(t *testing
 	logger := mocks.NewMockLogger(mockCtrl)
 	logger.EXPECT().Error(expectedError).Times(1)
 
-	ti := NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+	ti := interactor.NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
 
 	results, err := ti.Trace(u, assetsFolderPath)
 	if results == nil {
 		t.Error("unexpected response received. some results expected")
 	}
+
 	if err == nil {
 		t.Error("unexpected response received. an error expected")
 	} else {
@@ -135,7 +144,7 @@ func TestTraceInteractor_Trace_TraceRepository_SaveTraceResults_Error(t *testing
 
 func TestTraceInteractor_FindTrace_Success(t *testing.T) {
 	expectedResultsID := 17
-	expectedScreenshotPath := "assets/screenshots/" + randomScreenshotFileName("png")
+	expectedScreenshotPath := "assets/screenshots/some_random_file_name.png"
 
 	tr := &domain.TraceResults{
 		ID: expectedResultsID,
@@ -160,14 +169,17 @@ func TestTraceInteractor_FindTrace_Success(t *testing.T) {
 
 	logger := mocks.NewMockLogger(mockCtrl)
 
-	ti := NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+	ti := interactor.NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+
 	results, err := ti.FindTrace(expectedResultsID)
 	if err != nil {
 		t.Errorf("unexpected error received: %s\n", err)
 	}
+
 	if results.ID != expectedResultsID {
 		t.Error("unexpected results received. wrong results.ID")
 	}
+
 	if results.Screenshot != expectedScreenshotPath {
 		t.Error("unexpected results received. wrong results.Screenshot")
 	}
@@ -175,7 +187,7 @@ func TestTraceInteractor_FindTrace_Success(t *testing.T) {
 
 func TestTraceInteractor_FindTrace_Repository_FindTraceResults_Error(t *testing.T) {
 	expectedResultsID := 21
-	expectedError := errors.New("expected TracerRepository error")
+	expectedError := &expectedError{}
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -189,11 +201,13 @@ func TestTraceInteractor_FindTrace_Repository_FindTraceResults_Error(t *testing.
 	logger := mocks.NewMockLogger(mockCtrl)
 	logger.EXPECT().Error(expectedError).Times(1)
 
-	ti := NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+	ti := interactor.NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+
 	results, err := ti.FindTrace(expectedResultsID)
 	if results != nil {
 		t.Error("unexpected response received. no results expected")
 	}
+
 	if err == nil {
 		t.Error("unexpected response received. an error expected")
 	} else {
@@ -204,8 +218,8 @@ func TestTraceInteractor_FindTrace_Repository_FindTraceResults_Error(t *testing.
 }
 
 func TestTraceInteractor_Screenshot_Success(t *testing.T) {
-	assetsFolderPath := "assets/screenshots/"
 	screenshotPath := assetsFolderPath + "someRandomFileName.png"
+
 	u, err := url.Parse("http://ssyoutube.com")
 	if err != nil {
 		t.Errorf("Cannot parse error: %s\n", err)
@@ -220,14 +234,14 @@ func TestTraceInteractor_Screenshot_Success(t *testing.T) {
 	traceRepository := mocks.NewMockTraceRepository(mockCtrl)
 
 	tracePresenter := mocks.NewMockTracePresenter(mockCtrl)
-	//check if TracePresenter called correctly
+	// check if TracePresenter called correctly
 	tracePresenter.EXPECT().ResponseScreenshot(gomock.Any()).Times(1).DoAndReturn(func(screenshot string) interface{} {
 		return strings.Replace(screenshotPath, assetsFolderPath, "https://redirective.net/screenshots/", 1)
 	})
 
 	logger := mocks.NewMockLogger(mockCtrl)
 
-	ti := NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+	ti := interactor.NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
 
 	path, err := ti.Screenshot(u, 1920, 1080, assetsFolderPath)
 	if err != nil {
@@ -240,8 +254,7 @@ func TestTraceInteractor_Screenshot_Success(t *testing.T) {
 }
 
 func TestTraceInteractor_Screenshot_Tracer_Screenshot_Error(t *testing.T) {
-	assetsFolderPath := "assets/screenshots/"
-	expectedError := errors.New("expected Tracer error")
+	expectedError := &expectedError{}
 
 	u, err := url.Parse("http://ssyoutube.com")
 	if err != nil {
@@ -260,7 +273,7 @@ func TestTraceInteractor_Screenshot_Tracer_Screenshot_Error(t *testing.T) {
 	logger := mocks.NewMockLogger(mockCtrl)
 	logger.EXPECT().Error(expectedError)
 
-	ti := NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
+	ti := interactor.NewTraceInteractor(tracer, tracePresenter, traceRepository, logger)
 
 	path, err := ti.Screenshot(u, 1920, 1080, assetsFolderPath)
 	if err == nil {

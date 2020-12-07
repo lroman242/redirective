@@ -1,9 +1,13 @@
-package tracer
+package tracer_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/lroman242/redirective/infrastructure/tracer"
+)
 
 func TestNewScreenSize(t *testing.T) {
-	ss := NewScreenSize(15, 25)
+	ss := tracer.NewScreenSize(15, 25)
 
 	if ss.Width != 15 {
 		t.Errorf("Invalid ScreenSize Width on creating. Expect %d but get %d", 15, ss.Width)
