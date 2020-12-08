@@ -163,8 +163,9 @@ func TestFileLogger_Fatal(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
-	if !strings.Contains(string(content), "error") {
-		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
+
+	if !strings.Contains(string(content), "fatal") {
+		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "fatal", string(content))
 	}
 }
 

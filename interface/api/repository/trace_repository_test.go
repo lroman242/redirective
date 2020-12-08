@@ -1,24 +1,25 @@
 package repository_test
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/lroman242/redirective/domain"
 	"github.com/lroman242/redirective/interface/api/repository"
 	"github.com/lroman242/redirective/mocks"
-	"reflect"
-	"testing"
 )
 
-// ExpectedError describe special error type used for testing
+// ExpectedError describe special error type used for testing.
 type ExpectedError struct{}
 
-//Error function return error message
+// Error function return error message.
 func (e *ExpectedError) Error() string {
 	return "expected error"
 }
 
 func TestTraceRepository_FindTraceResults(t *testing.T) {
-	testResultsID := "SomeID"
+	testResultsID := "SomeID_TestTraceRepository_FindTraceResults"
 
 	testResults := &domain.TraceResults{
 		ID: testResultsID,
@@ -44,7 +45,7 @@ func TestTraceRepository_FindTraceResults(t *testing.T) {
 
 func TestTraceRepository_FindTraceResults_Error(t *testing.T) {
 	expectedError := &ExpectedError{}
-	testResultsID := "SomeID"
+	testResultsID := "SomeID_TestTraceRepository_FindTraceResults_Error"
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -69,7 +70,7 @@ func TestTraceRepository_FindTraceResults_Error(t *testing.T) {
 }
 
 func TestTraceRepository_SaveTraceResults(t *testing.T) {
-	testResultsID := "SomeID"
+	testResultsID := "SomeID_TestTraceRepository_SaveTraceResults"
 
 	testResults := &domain.TraceResults{}
 
@@ -103,13 +104,16 @@ func TestTraceRepository_SaveTraceResults_Error(t *testing.T) {
 	storage.EXPECT().SaveTraceResults(testResults).Times(1).Return(nil, expectedError)
 
 	tr := repository.NewTraceRepository(storage)
+
 	ID, err := tr.SaveTraceResults(testResults)
 	if err == nil {
 		t.Error("an error expected")
 	}
+
 	if ID != nil {
 		t.Error("no id expected")
 	}
+
 	if !reflect.DeepEqual(expectedError, err) {
 		t.Error("wrong error received")
 	}

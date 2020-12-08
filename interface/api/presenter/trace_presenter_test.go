@@ -1,9 +1,10 @@
 package presenter_test
 
 import (
+	"testing"
+
 	"github.com/lroman242/redirective/domain"
 	"github.com/lroman242/redirective/interface/api/presenter"
-	"testing"
 )
 
 const (

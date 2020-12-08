@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	jsonMimeType      = "application/json"
-	stringTestValue1  = "testVal1"
-	stringTestValue2  = "testVal2"
-	stringTestMessage = "Message"
+	jsonMimeType             = "application/json"
+	stringTestValue1         = "testVal1"
+	stringTestValue2         = "testVal2"
+	stringTestMessage        = "Message"
+	errorCannotConvertToJSON = "response data cannot be converted to json"
 )
 
 func TestResponse_Failed(t *testing.T) {
@@ -242,7 +243,7 @@ func TestResponse_Success_With_Invalid_Data(t *testing.T) {
 		t.Error("expect Response.Status equal to false")
 	}
 
-	if unmarshalResponse.Message != "response data cannot be converted to json" {
+	if unmarshalResponse.Message != errorCannotConvertToJSON {
 		t.Error("expect Response.Message equal to `response data cannot be converted to json`")
 	}
 
@@ -288,7 +289,7 @@ func TestResponse_Failed_With_Invalid_Data(t *testing.T) {
 		t.Error("expect Response.Status equal to false")
 	}
 
-	if unmarshalResponse.Message != "response data cannot be converted to json" {
+	if unmarshalResponse.Message != errorCannotConvertToJSON {
 		t.Error("expect Response.Message equal to `response data cannot be converted to json`")
 	}
 

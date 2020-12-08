@@ -1,7 +1,6 @@
 package controllers_test
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,9 +14,29 @@ import (
 	"github.com/lroman242/redirective/mocks"
 )
 
+const (
+	jsonContentType            = `application/json`
+	expectedStrURL             = `http://google.com.ua`
+	expectedScreenshotsPath    = `screenshots/`
+	expectedScreenshotResults  = `some/path/to/screenshot.png`
+	inputStrURL                = `invalid_url_input`
+	expectedResponse400        = `{"status":false,"message":"url parameter is required","status_code":400,"data":null}`
+	expectedResponseInvalidURL = `{"status":false,"message":"invalid url parse \"invalid_url_input\": invalid URI for request","status_code":400,"data":null}`
+	expectedResponseError      = `{"status":false,"message":"an error occurred. error: expected error","status_code":500,"data":null}`
+)
+
+// expectedError represent special error type used in testing.
+type expectedError struct {
+}
+
+// Error function will return error message.
+func (e *expectedError) Error() string {
+	return `expected error`
+}
+
 func TestTraceController_FindTraceResults(t *testing.T) {
-	testResultsID := "SomeTestResultsID"
-	expectedResponse := `{"status":true,"message":"trace results","status_code":200,"data":{"id":"SomeTestResultsID","redirects":null,"screenshot":"some/path/to/screenshot.png","url":"http://example.domain/screenshots/screenshot.png"}}`
+	testResultsID := "SomeTestResultsID_TestTraceController_FindTraceResults"
+	expectedResponse := `{"status":true,"message":"trace results","status_code":200,"data":{"id":"SomeTestResultsID_TestTraceController_FindTraceResults","redirects":null,"screenshot":"some/path/to/screenshot.png","url":"http://example.domain/screenshots/screenshot.png"}}`
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -49,18 +68,20 @@ func TestTraceController_FindTraceResults(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Error("wrong http status code received. expected 200")
 	}
+
 	if response.Body.String() != expectedResponse {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_FindTraceResults_TraceInteractor_FindTrace_Error(t *testing.T) {
-	testResultsID := "SomeTestResultsID"
-	expectedResponse := `{"status":false,"message":"an error occurred. error: some error","status_code":500,"data":null}`
-	expectedError := errors.New("some error")
+	testResultsID := "SomeTestResultsID_TestTraceController_FindTraceResults_TraceInteractor_FindTrace_Error"
+
+	expectedError := &expectedError{}
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -87,23 +108,22 @@ func TestTraceController_FindTraceResults_TraceInteractor_FindTrace_Error(t *tes
 		t.Error("wrong http status code received. expected 500")
 	}
 
-	if response.Body.String() != expectedResponse {
+	if response.Body.String() != expectedResponseError {
+		t.Log(response.Body.String())
 		t.Error("wrong response body received")
 	}
 
-	if response.Header().Get("Content-Type") != "application/json" {
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_TraceURL(t *testing.T) {
-	expectedResponse := `{"status":true,"message":"url traced","status_code":200,"data":{"id":"SomeTestResultsID","redirects":null,"screenshot":"some/path/to/screenshot.png","url":"http://example.domain/screenshots/screenshot.png"}}`
+	expectedResponse := `{"status":true,"message":"url traced","status_code":200,"data":{"id":"SomeTestResultsID_TestTraceController_TraceURL","redirects":null,"screenshot":"some/path/to/screenshot.png","url":"http://example.domain/screenshots/screenshot.png"}}`
 
-	expectedStrURL := "http://google.com.ua"
 	expectedURL, _ := url.ParseRequestURI(expectedStrURL)
 
-	expectedScreenshotsPath := "screenshots/"
-	testResultsID := "SomeTestResultsID"
+	testResultsID := "SomeTestResultsID_TestTraceController_TraceURL"
 
 	expectedTraceResults := &domain.TraceResults{
 		ID:         testResultsID,
@@ -132,19 +152,17 @@ func TestTraceController_TraceURL(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Error("wrong http status code received. expected 200")
 	}
+
 	if response.Body.String() != expectedResponse {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_TraceURL_InvalidURL_Error(t *testing.T) {
-	inputStrURL := "invalid_url_input"
-	expectedResponse := `{"status":false,"message":"invalid url parse \"invalid_url_input\": invalid URI for request","status_code":400,"data":null}`
-	expectedScreenshotsPath := "screenshots/"
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -161,27 +179,30 @@ func TestTraceController_TraceURL_InvalidURL_Error(t *testing.T) {
 	if response.Code != http.StatusBadRequest {
 		t.Error("wrong http status code received. expected 400")
 	}
-	if response.Body.String() != expectedResponse {
+
+	if response.Body.String() != expectedResponseInvalidURL {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_TraceURL_NoUrlProvided_Error(t *testing.T) {
 	inputStrURL := ""
-	expectedResponse := `{"status":false,"message":"url parameter is required","status_code":400,"data":null}`
-	expectedScreenshotsPath := "screenshots/"
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	traceInteractor := mocks.NewMockTraceInteractor(mockCtrl)
+
 	logger := mocks.NewMockLogger(mockCtrl)
 
 	response := httptest.NewRecorder()
+
 	request := httptest.NewRequest("GET", "/api/trace?url="+inputStrURL, nil)
+
 	params := make(httprouter.Params, 0)
 
 	controller := controllers.NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
@@ -190,34 +211,34 @@ func TestTraceController_TraceURL_NoUrlProvided_Error(t *testing.T) {
 	if response.Code != http.StatusBadRequest {
 		t.Error("wrong http status code received. expected 400")
 	}
-	if response.Body.String() != expectedResponse {
+
+	if response.Body.String() != expectedResponse400 {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_TraceURL_TraceInteractor_Trace_Error(t *testing.T) {
-	expectedResponse := `{"status":false,"message":"an error occurred. error: some error","status_code":500,"data":null}`
-
-	expectedStrURL := "http://google.com.ua"
 	expectedURL, _ := url.ParseRequestURI(expectedStrURL)
 
-	expectedScreenshotsPath := "screenshots/"
-
-	expectedError := errors.New("some error")
+	expectedError := &expectedError{}
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	traceInteractor := mocks.NewMockTraceInteractor(mockCtrl)
 	traceInteractor.EXPECT().Trace(expectedURL, expectedScreenshotsPath).Times(1).Return(nil, expectedError)
+
 	logger := mocks.NewMockLogger(mockCtrl)
 	logger.EXPECT().Error(expectedError).Times(1)
 
 	response := httptest.NewRecorder()
+
 	request := httptest.NewRequest("GET", "/api/trace?url="+expectedStrURL, nil)
+
 	params := make(httprouter.Params, 0)
 
 	controller := controllers.NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
@@ -226,10 +247,12 @@ func TestTraceController_TraceURL_TraceInteractor_Trace_Error(t *testing.T) {
 	if response.Code != http.StatusInternalServerError {
 		t.Error("wrong http status code received. expected 500")
 	}
-	if response.Body.String() != expectedResponse {
+
+	if response.Body.String() != expectedResponseError {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
@@ -237,23 +260,23 @@ func TestTraceController_TraceURL_TraceInteractor_Trace_Error(t *testing.T) {
 func TestTraceController_Screenshot(t *testing.T) {
 	expectedResponse := `{"status":true,"message":"url traced","status_code":200,"data":"some/path/to/screenshot.png"}`
 
-	expectedStrURL := "http://google.com.ua"
 	expectedURL, _ := url.ParseRequestURI(expectedStrURL)
+
 	expectedWidth := 1920
 	expectedHeight := 1080
-	expectedScreenshotsPath := "screenshots/"
-
-	expectedScreenshotResults := "some/path/to/screenshot.png"
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	traceInteractor := mocks.NewMockTraceInteractor(mockCtrl)
 	traceInteractor.EXPECT().Screenshot(expectedURL, expectedWidth, expectedHeight, expectedScreenshotsPath).Times(1).Return(expectedScreenshotResults, nil)
+
 	logger := mocks.NewMockLogger(mockCtrl)
 
 	response := httptest.NewRecorder()
+
 	request := httptest.NewRequest("GET", "/api/screenshot?url="+expectedStrURL+"&width="+strconv.Itoa(expectedWidth)+"&height="+strconv.Itoa(expectedHeight), nil)
+
 	params := make(httprouter.Params, 0)
 
 	controller := controllers.NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
@@ -262,18 +285,18 @@ func TestTraceController_Screenshot(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Error("wrong http status code received. expected 200")
 	}
+
 	if response.Body.String() != expectedResponse {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_Screenshot_NoUrlProvided_Error(t *testing.T) {
 	inputStrURL := ""
-	expectedResponse := `{"status":false,"message":"url parameter is required","status_code":400,"data":null}`
-	expectedScreenshotsPath := "screenshots/"
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -291,19 +314,17 @@ func TestTraceController_Screenshot_NoUrlProvided_Error(t *testing.T) {
 	if response.Code != http.StatusBadRequest {
 		t.Error("wrong http status code received. expected 400")
 	}
-	if response.Body.String() != expectedResponse {
+
+	if response.Body.String() != expectedResponse400 {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_Screenshot_InvalidURL_Error(t *testing.T) {
-	inputStrURL := "invalid_url_input"
-	expectedResponse := `{"status":false,"message":"invalid url parse \"invalid_url_input\": invalid URI for request","status_code":400,"data":null}`
-	expectedScreenshotsPath := "screenshots/"
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -320,35 +341,37 @@ func TestTraceController_Screenshot_InvalidURL_Error(t *testing.T) {
 	if response.Code != http.StatusBadRequest {
 		t.Error("wrong http status code received. expected 400")
 	}
-	if response.Body.String() != expectedResponse {
+
+	if response.Body.String() != expectedResponseInvalidURL {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_Screenshot_TraceInteractor_Screenshot_Error(t *testing.T) {
-	expectedResponse := `{"status":false,"message":"an error occurred. error: some error","status_code":500,"data":null}`
-
-	expectedStrURL := "http://google.com.ua"
 	expectedURL, _ := url.ParseRequestURI(expectedStrURL)
+
 	expectedWidth := 1920
 	expectedHeight := 1080
-	expectedScreenshotsPath := "screenshots/"
 
-	expectedError := errors.New("some error")
+	expectedError := &expectedError{}
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	traceInteractor := mocks.NewMockTraceInteractor(mockCtrl)
 	traceInteractor.EXPECT().Screenshot(expectedURL, expectedWidth, expectedHeight, expectedScreenshotsPath).Times(1).Return("", expectedError)
+
 	logger := mocks.NewMockLogger(mockCtrl)
 	logger.EXPECT().Error(expectedError).Times(1)
 
 	response := httptest.NewRecorder()
+
 	request := httptest.NewRequest("GET", "/api/screenshot?url="+expectedStrURL+"&width="+strconv.Itoa(expectedWidth)+"&height="+strconv.Itoa(expectedHeight), nil)
+
 	params := make(httprouter.Params, 0)
 
 	controller := controllers.NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
@@ -357,31 +380,34 @@ func TestTraceController_Screenshot_TraceInteractor_Screenshot_Error(t *testing.
 	if response.Code != http.StatusInternalServerError {
 		t.Error("wrong http status code received. expected 500")
 	}
-	if response.Body.String() != expectedResponse {
+
+	if response.Body.String() != expectedResponseError {
 		t.Error("wrong response body received")
 	}
-	if response.Header().Get("Content-Type") != "application/json" {
+
+	if response.Header().Get("Content-Type") != jsonContentType {
 		t.Error("wrong response headers. expected `content-type: application/json` header")
 	}
 }
 
 func TestTraceController_Screenshot_Width_And_Height_NotProvided(t *testing.T) {
-	expectedStrURL := "http://google.com.ua"
 	expectedURL, _ := url.ParseRequestURI(expectedStrURL)
+
 	expectedWidth := 1920
 	expectedHeight := 1080
-	expectedScreenshotsPath := "screenshots/"
-	expectedScreenshotResults := "some/path/to/screenshot.png"
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	traceInteractor := mocks.NewMockTraceInteractor(mockCtrl)
 	traceInteractor.EXPECT().Screenshot(expectedURL, expectedWidth, expectedHeight, expectedScreenshotsPath).Times(1).Return(expectedScreenshotResults, nil)
+
 	logger := mocks.NewMockLogger(mockCtrl)
 
 	response := httptest.NewRecorder()
+
 	request := httptest.NewRequest("GET", "/api/screenshot?url="+expectedStrURL, nil)
+
 	params := make(httprouter.Params, 0)
 
 	controller := controllers.NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
@@ -389,22 +415,23 @@ func TestTraceController_Screenshot_Width_And_Height_NotProvided(t *testing.T) {
 }
 
 func TestTraceController_Screenshot_Width_NotProvided(t *testing.T) {
-	expectedStrURL := "http://google.com.ua"
 	expectedURL, _ := url.ParseRequestURI(expectedStrURL)
+
 	expectedWidth := 1920
 	expectedHeight := 1080
-	expectedScreenshotsPath := "screenshots/"
-	expectedScreenshotResults := "some/path/to/screenshot.png"
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	traceInteractor := mocks.NewMockTraceInteractor(mockCtrl)
 	traceInteractor.EXPECT().Screenshot(expectedURL, expectedWidth, expectedHeight, expectedScreenshotsPath).Times(1).Return(expectedScreenshotResults, nil)
+
 	logger := mocks.NewMockLogger(mockCtrl)
 
 	response := httptest.NewRecorder()
+
 	request := httptest.NewRequest("GET", "/api/screenshot?url="+expectedStrURL+"&width=&height=300", nil)
+
 	params := make(httprouter.Params, 0)
 
 	controller := controllers.NewTraceController(traceInteractor, expectedScreenshotsPath, logger)
@@ -412,22 +439,23 @@ func TestTraceController_Screenshot_Width_NotProvided(t *testing.T) {
 }
 
 func TestTraceController_Screenshot_Height_NotProvided(t *testing.T) {
-	expectedStrURL := "http://google.com.ua"
 	expectedURL, _ := url.ParseRequestURI(expectedStrURL)
+
 	expectedWidth := 1920
 	expectedHeight := 1080
-	expectedScreenshotsPath := "screenshots/"
-	expectedScreenshotResults := "some/path/to/screenshot.png"
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	traceInteractor := mocks.NewMockTraceInteractor(mockCtrl)
 	traceInteractor.EXPECT().Screenshot(expectedURL, expectedWidth, expectedHeight, expectedScreenshotsPath).Times(1).Return(expectedScreenshotResults, nil)
+
 	logger := mocks.NewMockLogger(mockCtrl)
 
 	response := httptest.NewRecorder()
+
 	request := httptest.NewRequest("GET", "/api/screenshot?url="+expectedStrURL+"&width=500&height=", nil)
+
 	params := make(httprouter.Params, 0)
 
 	controller := controllers.NewTraceController(traceInteractor, expectedScreenshotsPath, logger)

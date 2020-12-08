@@ -8,7 +8,7 @@ import (
 
 const notConvertedToJSONErrorMessage = "response data cannot be converted to json"
 
-// Response type describe common http response
+// Response type describe common http response.
 type Response struct {
 	Status     bool        `json:"status"`
 	Message    string      `json:"message"`
@@ -16,7 +16,7 @@ type Response struct {
 	Data       interface{} `json:"data"`
 }
 
-// Success should be used to send success response (200 http status code)
+// Success should be used to send success response (200 http status code).
 func (r *Response) Success(w http.ResponseWriter) {
 	r.Status = true
 
@@ -41,7 +41,7 @@ func (r *Response) Success(w http.ResponseWriter) {
 	_, _ = w.Write(jsonResponse)
 }
 
-// Failed should be used to send error response (40x or 50x http status code)
+// Failed should be used to send error response (40x or 50x http status code).
 func (r *Response) Failed(w http.ResponseWriter) {
 	r.Status = false
 

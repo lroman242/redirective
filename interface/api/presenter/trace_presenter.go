@@ -1,3 +1,4 @@
+// Package presenter contains classes to represent functions required to provide correct response format.
 package presenter
 
 import (

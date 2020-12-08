@@ -1,35 +1,42 @@
+// Package controllers contains classes to handle http requests and build response
 package controllers
 
 import (
 	"fmt"
-	"github.com/julienschmidt/httprouter"
-	"github.com/lroman242/redirective/infrastructure/logger"
-	"github.com/lroman242/redirective/usecase/interactor"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/julienschmidt/httprouter"
+	"github.com/lroman242/redirective/infrastructure/logger"
+	"github.com/lroman242/redirective/usecase/interactor"
 )
 
-const defaultScreenWidth = 1920
-const defaultScreenHeight = 1080
+const (
+	defaultScreenWidth  = 1920
+	defaultScreenHeight = 1080
+)
 
+// TraceController interface represent functions required to handle application requests.
 type TraceController interface {
 	TraceURL(http.ResponseWriter, *http.Request, httprouter.Params)
 	Screenshot(http.ResponseWriter, *http.Request, httprouter.Params)
 	FindTraceResults(http.ResponseWriter, *http.Request, httprouter.Params)
 }
 
+// traceController implement TraceController interface.
 type traceController struct {
 	traceInteractor interactor.TraceInteractor
 	assetsPath      string
 	log             logger.Logger
 }
 
-// NewTraceController
+// NewTraceController will build TraceController instance.
 func NewTraceController(ti interactor.TraceInteractor, assetsPath string, log logger.Logger) TraceController {
 	return &traceController{ti, assetsPath, log}
 }
 
+// TraceURL function will trace redirects for provided URL.
 func (tc *traceController) TraceURL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	urlToTrace := r.URL.Query().Get("url")
 	if urlToTrace == "" {
@@ -37,7 +44,8 @@ func (tc *traceController) TraceURL(w http.ResponseWriter, r *http.Request, ps h
 			Status:     false,
 			Message:    "url parameter is required",
 			StatusCode: http.StatusBadRequest,
-			Data:       nil}).Failed(w)
+			Data:       nil,
+		}).Failed(w)
 
 		return
 	}
@@ -49,7 +57,8 @@ func (tc *traceController) TraceURL(w http.ResponseWriter, r *http.Request, ps h
 			Status:     false,
 			Message:    fmt.Sprintf("invalid url %s", err),
 			StatusCode: http.StatusBadRequest,
-			Data:       nil}).Failed(w)
+			Data:       nil,
+		}).Failed(w)
 
 		return
 	}
@@ -61,7 +70,8 @@ func (tc *traceController) TraceURL(w http.ResponseWriter, r *http.Request, ps h
 			Status:     false,
 			Message:    fmt.Sprintf("an error occurred. error: %s", err),
 			StatusCode: http.StatusInternalServerError,
-			Data:       nil}).Failed(w)
+			Data:       nil,
+		}).Failed(w)
 
 		return
 	}
@@ -74,6 +84,7 @@ func (tc *traceController) TraceURL(w http.ResponseWriter, r *http.Request, ps h
 	}).Success(w)
 }
 
+// Screenshot function will retrieve screenshot from provided URL.
 func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	urlToTrace := r.URL.Query().Get("url")
 	if urlToTrace == "" {
@@ -81,33 +92,13 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 			Status:     false,
 			Message:    "url parameter is required",
 			StatusCode: http.StatusBadRequest,
-			Data:       nil}).Failed(w)
+			Data:       nil,
+		}).Failed(w)
 
 		return
 	}
 
-	var err error
-
-	var width int
-
-	var height int
-
-	if r.URL.Query().Get("width") == "" || r.URL.Query().Get("height") == "" {
-		width = defaultScreenWidth
-		height = defaultScreenHeight
-	} else {
-		width, err = strconv.Atoi(r.URL.Query().Get("width"))
-		if err != nil {
-			width = defaultScreenWidth
-			height = defaultScreenHeight
-		} else {
-			height, err = strconv.Atoi(r.URL.Query().Get("height"))
-			if err != nil {
-				width = defaultScreenWidth
-				height = defaultScreenHeight
-			}
-		}
-	}
+	width, height := parseSizeFromRequest(r)
 
 	// convert raw url string to url.URL
 	targetURL, err := url.ParseRequestURI(urlToTrace)
@@ -116,7 +107,8 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 			Status:     false,
 			Message:    fmt.Sprintf("invalid url %s", err),
 			StatusCode: http.StatusBadRequest,
-			Data:       nil}).Failed(w)
+			Data:       nil,
+		}).Failed(w)
 
 		return
 	}
@@ -128,7 +120,8 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 			Status:     false,
 			Message:    fmt.Sprintf("an error occurred. error: %s", err),
 			StatusCode: http.StatusInternalServerError,
-			Data:       nil}).Failed(w)
+			Data:       nil,
+		}).Failed(w)
 
 		return
 	}
@@ -141,6 +134,7 @@ func (tc *traceController) Screenshot(w http.ResponseWriter, r *http.Request, ps
 	}).Success(w)
 }
 
+// FindTraceResults will find tracer results by provided id.
 func (tc *traceController) FindTraceResults(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id := ps.ByName("id")
 
@@ -151,7 +145,8 @@ func (tc *traceController) FindTraceResults(w http.ResponseWriter, r *http.Reque
 			Status:     false,
 			Message:    fmt.Sprintf("an error occurred. error: %s", err),
 			StatusCode: http.StatusInternalServerError,
-			Data:       nil}).Failed(w)
+			Data:       nil,
+		}).Failed(w)
 
 		return
 	}
@@ -162,4 +157,25 @@ func (tc *traceController) FindTraceResults(w http.ResponseWriter, r *http.Reque
 		StatusCode: http.StatusOK,
 		Data:       results,
 	}).Success(w)
+}
+
+func parseSizeFromRequest(r *http.Request) (int, int) {
+	var err error
+
+	var width int
+
+	var height int
+
+	if r.URL.Query().Get("width") == "" || r.URL.Query().Get("height") == "" {
+		width = defaultScreenWidth
+		height = defaultScreenHeight
+	} else if width, err = strconv.Atoi(r.URL.Query().Get("width")); err != nil {
+		width = defaultScreenWidth
+		height = defaultScreenHeight
+	} else if height, err = strconv.Atoi(r.URL.Query().Get("height")); err != nil {
+		width = defaultScreenWidth
+		height = defaultScreenHeight
+	}
+
+	return width, height
 }
