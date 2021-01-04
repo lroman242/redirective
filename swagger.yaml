@@ -1,0 +1,210 @@
+swagger: '2.0'
+info:
+  description: >-
+    Redirective is tool that  allows you to see detailed report about reidrects
+    and complete path that URL goes through to get final destination.
+  version: 1.0.0
+  title: Redirective
+  contact:
+    email: lroman242@gmail.com
+  license:
+    name: MIT
+    url: 'https://opensource.org/licenses/MIT'
+host: api.redirective.net
+basePath: /api
+schemes:
+  - https
+  - http
+paths:
+  /find/{id}:
+    get:
+      tags:
+      - Find Trace Results
+      summary: Find trace results by ID
+      description: Returns trace results by id
+      operationId: getTraceResultById
+      produces:
+      - application/json
+      parameters:
+      - name: id
+        in: path
+        description: ID of pet to return
+        required: true
+        type: string
+        format: UUID
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: "#/definitions/TraceResults"
+        '404':
+          description: Trace Results not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  /screenshot:
+    get:
+      tags:
+        - Capture Screenshot
+      summary: Capture final page screenshot
+      description: Capture final page screenshot
+      produces:
+        - application/json
+      parameters:
+        - name: url
+          in: query
+          description: URL that should be traced
+          required: true
+          type: string
+        - name: width
+          in: query
+          description: screen width
+          required: false
+          type: integer
+        - name: height
+          in: query
+          description: screen height
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/ScreenshotResponse'
+        '400':
+          description: URL parameter is required or invalid URL provided
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '500':
+          description: Something went wrong
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  /trace:
+    get:
+      tags:
+        - Tracer URL
+      summary: Trace URL
+      description: Trace provided URL
+      operationId: traceURL
+      produces:
+        - application/json
+      parameters:
+        - name: url
+          in: query
+          description: URL that should be traced
+          required: true
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/TraceResultsResponse'
+        '400':
+          description: URL parameter is required or invalid URL provided
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '500':
+          description: Something went wrong
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+definitions:
+  Cookie:
+    type: object
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+      path:
+        type: string
+      domain:
+        type: string
+      expires:
+        type: string
+        format: date-time
+      raw_expires:
+        type: string
+      max_age:
+        type: integer
+      secure:
+        type: boolean
+      http_only:
+        type: boolean
+      raw:
+        type: string
+      unparsed:
+        type: object
+  Redirect:
+    type: object
+    properties:
+      from:
+        type: string
+        format: url
+      to:
+        type: string
+        format: url
+      status:
+        type: integer
+      initiator:
+        type: string
+      request_headers:
+        type: object
+      response_headers:
+        type: object
+      cookies:
+        type: array
+        items:
+         $ref: '#/definitions/Cookie'
+      other_info:
+        type: object
+  TraceResults:
+    type: object
+    properties:
+      id:
+        type: string
+      redirects:
+        $ref: '#/definitions/Redirect'
+      screenshot:
+        type: string
+        format: path
+      url:
+        type: string
+        format: url
+  ErrorResponse:
+    type: object
+    properties:
+      status:
+        type: boolean
+        default: false
+      status_code:
+        type: integer
+        format: int32
+      message:
+        type: string
+  TraceResultsResponse:
+    type: object
+    properties:
+      status:
+        type: boolean
+        default: true
+      status_code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      data:
+        $ref: '#/definitions/TraceResults'
+  ScreenshotResponse:
+    type: object
+    properties:
+      status:
+        type: boolean
+        default: true
+      status_code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      data:
+        type: string
+        format: url
+        

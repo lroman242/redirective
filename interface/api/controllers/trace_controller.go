@@ -143,8 +143,8 @@ func (tc *traceController) FindTraceResults(w http.ResponseWriter, r *http.Reque
 		tc.log.Error(err)
 		(&Response{
 			Status:     false,
-			Message:    fmt.Sprintf("an error occurred. error: %s", err),
-			StatusCode: http.StatusInternalServerError,
+			Message:    "trace results not found",//fmt.Sprintf("an error occurred. error: %s", err),
+			StatusCode: http.StatusNotFound,
 			Data:       nil,
 		}).Failed(w)
 
