@@ -18,6 +18,7 @@ import (
 const connectTimeout = 10
 const pingTimeout = 2
 const queryTimeout = 5
+const ttlInSeconds = 2592000
 
 // MongoDB type describe MongoDB storage instance
 type MongoDB struct {
@@ -49,6 +50,24 @@ func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 
 	collection := client.Database(conf.Database).Collection(conf.Table)
 
+	// Set 30 days TTL for records
+	ctxCreateIndex, cancelFuncCreateIndex := context.WithTimeout(context.Background(), pingTimeout*time.Second)
+	defer cancelFuncCreateIndex()
+
+	indexModel := mongo.IndexModel{
+		Keys: bson.D{
+			{"createdAt", 1},
+		},
+		Options: options.Index().SetExpireAfterSeconds(ttlInSeconds),
+	}
+
+	_, err = collection.Indexes().CreateOne(ctxCreateIndex, indexModel)
+	if err != nil {
+		log.Printf("mongodb set ttl failed. error: %s", err)
+
+		return nil, err
+	}
+
 	return &MongoDB{collection: collection}, nil
 }
 
@@ -57,7 +76,15 @@ func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface
 	ctx, cancelFunc := context.WithTimeout(context.Background(), queryTimeout*time.Second)
 	defer cancelFunc()
 
-	res, err := m.collection.InsertOne(ctx, traceResults)
+	record := struct {
+		*domain.TraceResults
+		CreatedAt time.Time `json:"created_at"`
+	}{
+		traceResults,
+		time.Now(),
+	}
+
+	res, err := m.collection.InsertOne(ctx, record)
 	if err != nil {
 		return nil, err
 	}

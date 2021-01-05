@@ -15,14 +15,15 @@ import (
 )
 
 const (
-	jsonContentType            = `application/json`
-	expectedStrURL             = `http://google.com.ua`
-	expectedScreenshotsPath    = `screenshots/`
-	expectedScreenshotResults  = `some/path/to/screenshot.png`
-	inputStrURL                = `invalid_url_input`
-	expectedResponse400        = `{"status":false,"message":"url parameter is required","status_code":400,"data":null}`
-	expectedResponseInvalidURL = `{"status":false,"message":"invalid url parse \"invalid_url_input\": invalid URI for request","status_code":400,"data":null}`
-	expectedResponseError      = `{"status":false,"message":"an error occurred. error: expected error","status_code":500,"data":null}`
+	jsonContentType               = `application/json`
+	expectedStrURL                = `http://google.com.ua`
+	expectedScreenshotsPath       = `screenshots/`
+	expectedScreenshotResults     = `some/path/to/screenshot.png`
+	inputStrURL                   = `invalid_url_input`
+	expectedResponse400           = `{"status":false,"message":"url parameter is required","status_code":400,"data":null}`
+	expectedResponseInvalidURL    = `{"status":false,"message":"invalid url parse \"invalid_url_input\": invalid URI for request","status_code":400,"data":null}`
+	expectedResponseError         = `{"status":false,"message":"an error occurred. error: expected error","status_code":500,"data":null}`
+	expectedNotFoundResponseError = `{"status":false,"message":"trace results not found","status_code":404,"data":null}`
 )
 
 // expectedError represent special error type used in testing.
@@ -104,11 +105,11 @@ func TestTraceController_FindTraceResults_TraceInteractor_FindTrace_Error(t *tes
 	controller := controllers.NewTraceController(traceInteractor, "screenshots/", logger)
 	controller.FindTraceResults(response, request, params)
 
-	if response.Code != http.StatusInternalServerError {
-		t.Error("wrong http status code received. expected 500")
+	if response.Code != http.StatusNotFound {
+		t.Error("wrong http status code received. expected 404")
 	}
 
-	if response.Body.String() != expectedResponseError {
+	if response.Body.String() != expectedNotFoundResponseError {
 		t.Log(response.Body.String())
 		t.Error("wrong response body received")
 	}
