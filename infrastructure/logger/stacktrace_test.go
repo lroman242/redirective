@@ -1,13 +1,15 @@
 package logger_test
 
 import (
-	"github.com/lroman242/redirective/infrastructure/logger"
 	"strings"
 	"testing"
+
+	"github.com/lroman242/redirective/infrastructure/logger"
 )
 
+const expectedMessage = "Some Expected Message"
+
 func TestStackTrace_Message(t *testing.T) {
-	expectedMessage := "Some Expected Message"
 	stackTrace := logger.NewStackTrace(expectedMessage, 1)
 
 	if expectedMessage != stackTrace.Message() {
@@ -16,7 +18,6 @@ func TestStackTrace_Message(t *testing.T) {
 }
 
 func TestStackTrace_Path(t *testing.T) {
-	expectedMessage := "Some Expected Message"
 	expectedPath := "/stacktrace_test.go:21"
 	stackTrace := logger.NewStackTrace(expectedMessage, 1)
 
@@ -26,13 +27,13 @@ func TestStackTrace_Path(t *testing.T) {
 }
 
 func TestStackTrace_String(t *testing.T) {
-	expectedMessage := "Some Expected Message"
-	expectedPath := "/stacktrace_test.go:31"
+	expectedPath := "/stacktrace_test.go:30"
 	stackTrace := logger.NewStackTrace(expectedMessage, 1)
 
 	if !strings.Contains(stackTrace.String(), expectedMessage) {
 		t.Error("result string doesn't contains input message")
 	}
+
 	if !strings.Contains(stackTrace.String(), expectedPath) {
 		t.Error("result string doesn't contains path")
 	}

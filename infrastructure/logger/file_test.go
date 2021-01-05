@@ -1,49 +1,45 @@
-package logger
+package logger_test
 
 import (
 	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/lroman242/redirective/infrastructure/logger"
+)
+
+const (
+	expectedStringLog = `some log message`
+	expectedLogsPath  = `test_logs`
+	expectedFormat    = `log: %s`
 )
 
 func TestNewFileLogger(t *testing.T) {
-	expectedLogsPath := "test_logs"
-	log := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	switch tp := log.(type) {
-	case *fileLogger:
-		if tp.logsDir != expectedLogsPath {
-			t.Error("wrong logs dir path")
-		}
-		if _, err := os.Stat(tp.logsDir); os.IsNotExist(err) {
-			t.Error("logs directory is not exists")
-		}
-		if _, err := os.Stat(tp.logsDir + "/" + tp.filename); os.IsNotExist(err) {
-			t.Error("log file is not exists")
-		}
-	default:
-		t.Error("unexpected type")
+	if _, err := os.Stat(log.(*logger.FileLogger).LogFilePath()); os.IsNotExist(err) {
+		t.Error("log file is not exists")
 	}
 }
 
 func TestFileLogger_Write(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	_, err := logger.Write([]byte(expectedStringLog))
+	_, err := log.Write([]byte(expectedStringLog))
 	if err != nil {
 		t.Errorf("unexpected error during write. error: %s", err)
 	}
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -54,16 +50,15 @@ func TestFileLogger_Write(t *testing.T) {
 }
 
 func TestFileLogger_Debug(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Debug(expectedStringLog)
+	log.Debug(expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -71,22 +66,22 @@ func TestFileLogger_Debug(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "debug") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "debug", string(content))
 	}
 }
 
 func TestFileLogger_Info(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Info(expectedStringLog)
+	log.Info(expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -94,22 +89,22 @@ func TestFileLogger_Info(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "info") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "info", string(content))
 	}
 }
 
 func TestFileLogger_Warn(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Warn(expectedStringLog)
+	log.Warn(expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -117,22 +112,22 @@ func TestFileLogger_Warn(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "warning") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "warning", string(content))
 	}
 }
 
 func TestFileLogger_Error(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Error(expectedStringLog)
+	log.Error(expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -140,23 +135,21 @@ func TestFileLogger_Error(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "error") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
 	}
 }
 
-//
 //func TestFileLogger_Fatal(t *testing.T) {
-//	expectedStringLog := "some log message"
-//	expectedLogsPath := "test_logs"
-//	logger := NewFileLogger(expectedLogsPath)
+//	log := logger.NewFileLogger(expectedLogsPath)
 //	defer func() {
 //		_ = os.RemoveAll(expectedLogsPath)
 //	}()
 //
-//	logger.Fatal(expectedStringLog)
+//	log.Fatal(expectedStringLog)
 //
-//	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+//	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 //	if err != nil {
 //		t.Errorf("unexpected error while reading log file: %s", err)
 //	}
@@ -171,22 +164,22 @@ func TestFileLogger_Error(t *testing.T) {
 //}
 
 func TestFileLogger_Panic(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		r := recover()
 		if r == nil {
 			t.Error("Panic expected")
 		}
 	}()
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Panic(expectedStringLog)
+	log.Panic(expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -194,23 +187,22 @@ func TestFileLogger_Panic(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "error") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
 	}
 }
 
 func TestFileLogger_Debugf(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	expectedFormat := "log: %s"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Debugf(expectedFormat, expectedStringLog)
+	log.Debugf(expectedFormat, expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -218,23 +210,22 @@ func TestFileLogger_Debugf(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "debug") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "debug", string(content))
 	}
 }
 
 func TestFileLogger_Infof(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	expectedFormat := "log: %s"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Infof(expectedFormat, expectedStringLog)
+	log.Infof(expectedFormat, expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -242,23 +233,22 @@ func TestFileLogger_Infof(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "info") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "info", string(content))
 	}
 }
 
 func TestFileLogger_Warnf(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	expectedFormat := "log: %s"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Warnf(expectedFormat, expectedStringLog)
+	log.Warnf(expectedFormat, expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -266,23 +256,22 @@ func TestFileLogger_Warnf(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "warning") {
 		t.Errorf("unexpected logs parsed. expected substring %s in %s", "warning", string(content))
 	}
 }
 
 func TestFileLogger_Errorf(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	expectedFormat := "log: %s"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Errorf(expectedFormat, expectedStringLog)
+	log.Errorf(expectedFormat, expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
@@ -290,24 +279,21 @@ func TestFileLogger_Errorf(t *testing.T) {
 	if !strings.Contains(string(content), expectedStringLog) {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", expectedStringLog, string(content))
 	}
+
 	if !strings.Contains(string(content), "error") {
 		t.Errorf("unexpected logs parsed. Expected substring %s in %s", "error", string(content))
 	}
 }
 
-//
 //func TestFileLogger_Fatalf(t *testing.T) {
-//	expectedStringLog := "some log message"
-//	expectedLogsPath := "test_logs"
-//	expectedFormat := "log: %s"
-//	logger := NewFileLogger(expectedLogsPath)
+//	log := logger.NewFileLogger(expectedLogsPath)
 //	defer func() {
 //		_ = os.RemoveAll(expectedLogsPath)
 //	}()
 //
-//	logger.Fatalf(expectedFormat, expectedStringLog)
+//	log.Fatalf(expectedFormat, expectedStringLog)
 //
-//	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+//	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 //	if err != nil {
 //		t.Errorf("unexpected error while reading log file: %s", err)
 //	}
@@ -321,17 +307,15 @@ func TestFileLogger_Errorf(t *testing.T) {
 //}
 
 func TestFileLogger_Printf(t *testing.T) {
-	expectedStringLog := "some log message"
-	expectedLogsPath := "test_logs"
-	expectedFormat := "log: %s"
-	logger := NewFileLogger(expectedLogsPath)
+	log := logger.NewFileLogger(expectedLogsPath)
+
 	defer func() {
 		_ = os.RemoveAll(expectedLogsPath)
 	}()
 
-	logger.Printf(expectedFormat, expectedStringLog)
+	log.Printf(expectedFormat, expectedStringLog)
 
-	content, err := ioutil.ReadFile(logger.(*fileLogger).logsDir + "/" + logger.(*fileLogger).filename)
+	content, err := ioutil.ReadFile(log.(*logger.FileLogger).LogFilePath())
 	if err != nil {
 		t.Errorf("unexpected error while reading log file: %s", err)
 	}
