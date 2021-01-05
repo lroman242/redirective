@@ -3,6 +3,10 @@ package storage
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
+	"time"
+
 	"github.com/lroman242/redirective/config"
 	"github.com/lroman242/redirective/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,23 +14,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"log"
-	"strconv"
-	"time"
 )
 
-const connectTimeout = 10
-const pingTimeout = 2
-const queryTimeout = 5
-const ttlInSeconds = 2592000
+const (
+	connectTimeout = 10
+	pingTimeout    = 2
+	queryTimeout   = 5
+	ttlInSeconds   = 2592000
+)
 
-// MongoDB type describe MongoDB storage instance
+// MongoDB type describe MongoDB storage instance.
 type MongoDB struct {
 	collection *mongo.Collection
 }
 
 // NewMongoDB function will create new MongoDB (implements Storage interface)
-// instance according to provided StorageConfig
+// instance according to provided StorageConfig.
 func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 	ctxConnect, cancelFuncConnect := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancelFuncConnect()
@@ -56,7 +59,7 @@ func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
-			{"createdAt", 1},
+			{Key: "createdAt", Value: 1},
 		},
 		Options: options.Index().SetExpireAfterSeconds(ttlInSeconds),
 	}
@@ -71,7 +74,7 @@ func NewMongoDB(conf *config.StorageConfig) (*MongoDB, error) {
 	return &MongoDB{collection: collection}, nil
 }
 
-// SaveTraceResults function used to save domain.TraceResults into storage
+// SaveTraceResults function used to save domain.TraceResults into storage.
 func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface{}, error) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), queryTimeout*time.Second)
 	defer cancelFunc()
@@ -92,7 +95,7 @@ func (m *MongoDB) SaveTraceResults(traceResults *domain.TraceResults) (interface
 	return res.InsertedID, nil
 }
 
-// FindTraceResults function used to find domain.TraceResults into storage using ID
+// FindTraceResults function used to find domain.TraceResults into storage using ID.
 func (m *MongoDB) FindTraceResults(id interface{}) (*domain.TraceResults, error) {
 	var ID primitive.ObjectID
 
@@ -111,12 +114,13 @@ func (m *MongoDB) FindTraceResults(id interface{}) (*domain.TraceResults, error)
 	}
 
 	results := &domain.TraceResults{}
+
 	ctx, cancelFunc := context.WithTimeout(context.Background(), queryTimeout*time.Second)
 	defer cancelFunc()
 
 	err = m.collection.FindOne(ctx, bson.M{"_id": ID}).Decode(results)
 	if err != nil {
-		return nil, fmt.Errorf("mongodb reulsts decode failed. error: %s \n", err)
+		return nil, &CannotDecodeRecordError{err: err}
 	}
 
 	return results, nil
