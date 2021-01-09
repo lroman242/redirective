@@ -1,9 +1,7 @@
 package tracer
 
 import (
-	"errors"
-	"fmt"
-	"github.com/lroman242/redirective/domain"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,30 +10,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lroman242/redirective/domain"
 	"github.com/raff/godet"
-	"log"
 )
-
-const setCookieHeaderName = "set-cookie"
-const documentParamName = "Document"
 
 const (
-	screenshotDelay                                     = 3
-	traceDelay                                          = 3
-	errorMessageInvalidMainFrameID                      = "invalid mainframe id"
-	errorMessageNoResponseFromMainFrame                 = "no responses found for mainframe"
-	errorMessageRedirectResponseNotExists               = "invalid redirect. `redirectResponse` param not exists"
-	errorMessageRequestNotExists                        = "invalid redirect. `request` param not exists"
-	errorMessageInvalidToURL                            = "invalid redirect `To` url"
-	errorMessageInvalidFromURL                          = "invalid redirect `From` url"
-	errorMessageRedirectResponseParamURLNotExists       = "invalid redirect. `redirectResponse` param `url` not exists"
-	errorMessageRedirectResponseParamHeadersNotExists   = "invalid redirect. `redirectResponse` param `headers` not exists"
-	errorMessageRequestParamHeadersNotExists            = "invalid redirect. request param `headers` not exists"
-	errorMessageResponseParamNotExists                  = "invalid redirect. `response` param not exists"
-	errorMessageRedirectResponseParamInitiatorNotExists = "invalid redirect. `initiator` param not exists"
+	setCookieHeaderName = "set-cookie"
+	documentParamName   = "Document"
 )
 
-// ChromeRemoteDebuggerInterface implements API to work with browser debugger
+const (
+	screenshotDelay = 3
+)
+
+// ChromeRemoteDebuggerInterface implements API to work with browser debugger.
 type ChromeRemoteDebuggerInterface interface {
 	EnableRequestInterception(enabled bool) error
 	CallbackEvent(method string, cb godet.EventCallback)
@@ -52,16 +40,18 @@ type ChromeRemoteDebuggerInterface interface {
 	Close() error
 }
 
+// ChromeTracer interface extend Tracer interface
+// and describe additional functions required for chrome browser.
 type ChromeTracer interface {
 	Tracer
 	ChromeProcess() *os.Process
 	Close() error
 }
 
-// chromeTracer represent tracer based on google chrome debugging tools
+// chromeTracer represent tracer based on google chrome debugging tools.
 type chromeTracer struct {
-	chromePort             int
-	chromePath             string
+	chromePort int
+	// chromePath             string
 	size                   *ScreenSize
 	screenshotsStoragePath string
 	chromeProcess          *os.Process
@@ -75,7 +65,7 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 		return nil, err
 	}
 
-	//TODO: find if it's possible to restart chrome!
+	// TODO: find if it's possible to restart chrome!
 	remote.CallbackEvent("RemoteDebugger.disconnected", func(params godet.Params) {
 		log.Println("Remote disconnected")
 		panic("Remote disconnected")
@@ -84,7 +74,7 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 	return remote, nil
 }
 
-// Close method will stop google-chrome process
+// Close method will stop google-chrome process.
 func (ct *chromeTracer) Close() error {
 	if err := ct.chromeProcess.Kill(); err != nil {
 		log.Fatalf("Close error: %s\n", err)
@@ -95,16 +85,15 @@ func (ct *chromeTracer) Close() error {
 	return nil
 }
 
-// ChromeProcess get google-chrome process
+// ChromeProcess get google-chrome process.
 func (ct *chromeTracer) ChromeProcess() *os.Process {
 	return ct.chromeProcess
 }
 
-// NewChromeTracer create new chrome tracer instance
+// NewChromeTracer create new chrome tracer instance.
 func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) ChromeTracer {
-	//TODO: get chrome port and path from func args
-
 	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/77.0.3854.3 Chrome/77.0.3854.3 Safari/537.36"
+	// TODO: get chrome port and path from func args
 	cmd := exec.Command("/usr/bin/google-chrome",
 		"--addr=localhost",
 		"--port=9222",
@@ -127,7 +116,7 @@ func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) ChromeTrac
 
 	ct := &chromeTracer{
 		chromePort: 9222,
-		//chromePath:             path,
+		// chromePath:             path,
 		size:                   size,
 		screenshotsStoragePath: screenshotsStoragePath,
 		chromeProcess:          cmd.Process,
@@ -141,7 +130,7 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 
 	err := debugger.EnableRequestInterception(true)
 	if err != nil {
-		return frameID, fmt.Errorf("`EnableRequestInterception` failed. %s", err)
+		return frameID, &EnableRequestInterceptionError{err: err}
 	}
 
 	debugger.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
@@ -157,13 +146,13 @@ func (ct *chromeTracer) traceURL(debugger ChromeRemoteDebuggerInterface, url *ur
 
 	frameID, err = newTab(debugger, url, ct.size, filePath)
 	if err != nil {
-		return frameID, fmt.Errorf("`newTab` failed. %s\n", err)
+		return frameID, &NewTabError{err: err}
 	}
 
 	return frameID, nil
 }
 
-// Trace parse redirect trace path for provided url
+// Trace parse redirect trace path for provided url.
 func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResults, error) {
 	debugger, err := ct.initChromeRemoteDebugger()
 	if err != nil {
@@ -188,7 +177,7 @@ func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResul
 	}
 
 	if frameID == "" {
-		return nil, errors.New(errorMessageInvalidMainFrameID)
+		return nil, &InvalidFrameIDError{}
 	}
 
 	//if len(rawRedirects) == 0 {
@@ -199,7 +188,7 @@ func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResul
 		for _, rawRedirect := range rawRedirects {
 			redirect, err := parseRedirectFromRaw(rawRedirect)
 			if err != nil {
-				return nil, fmt.Errorf("an error during parsing redirects. %s", err)
+				return nil, &RedirectParseError{err: err}
 			}
 
 			redirects = append(redirects, redirect)
@@ -208,15 +197,15 @@ func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResul
 		return redirects, errors.New("No redirects found for mainframe")
 	}*/
 
-	if rawRespons, ok := rawResponses[frameID]; ok {
-		response, err := pareseMainResponseFromRaw(rawRespons[len(rawRespons)-1])
+	if rawResponse, ok := rawResponses[frameID]; ok {
+		response, err := parseMainResponseFromRaw(rawResponse[len(rawResponse)-1])
 		if err != nil {
-			return nil, fmt.Errorf("an error during parsing response. %s", err)
+			return nil, &ResponseParseError{err: err}
 		}
 
 		redirects = append(redirects, response)
 	} else {
-		return nil, errors.New(errorMessageNoResponseFromMainFrame)
+		return nil, &NoResponseError{}
 	}
 
 	return &domain.TraceResults{
@@ -225,7 +214,7 @@ func (ct *chromeTracer) Trace(url *url.URL, filePath string) (*domain.TraceResul
 	}, nil
 }
 
-// Screenshot function makes a final page screen capture
+// Screenshot function makes a final page screen capture.
 func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, filePath string) error {
 	debugger, err := ct.initChromeRemoteDebugger()
 	if err != nil {
@@ -238,12 +227,12 @@ func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, filePath stri
 
 	err = debugger.EnableRequestInterception(true)
 	if err != nil {
-		return fmt.Errorf("`EnableRequestInterception` failed. %s\n", err)
+		return &EnableRequestInterceptionError{err: err}
 	}
 
 	_, err = newTab(debugger, url, size, filePath)
 	if err != nil {
-		return fmt.Errorf("`newTab` failed. %s\n", err)
+		return &NewTabError{err: err}
 	}
 
 	return nil
@@ -251,11 +240,11 @@ func (ct *chromeTracer) Screenshot(url *url.URL, size *ScreenSize, filePath stri
 
 func parseRedirectFromRaw(rawRedirect godet.Params) (*domain.Redirect, error) {
 	if _, ok := rawRedirect["redirectResponse"]; !ok {
-		return nil, errors.New(errorMessageRedirectResponseNotExists)
+		return nil, &RedirectResponseNotExistsInRawDataError{}
 	}
 
 	if _, ok := rawRedirect["request"]; !ok {
-		return nil, errors.New(errorMessageRequestNotExists)
+		return nil, &RequestNotExistsInRawDataError{}
 	}
 
 	redirectResponse := rawRedirect.Map("redirectResponse")
@@ -263,20 +252,20 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*domain.Redirect, error) {
 
 	to, err := url.Parse(rawRedirect.String("documentURL"))
 	if err != nil {
-		return nil, errors.New(errorMessageInvalidToURL)
+		return nil, &InvalidToURLDataError{}
 	}
 
 	if _, ok := redirectResponse["url"]; !ok {
-		return nil, errors.New(errorMessageRedirectResponseParamURLNotExists)
+		return nil, &URLParamNotExistsInRedirectDataError{}
 	}
 
 	from, err := url.Parse(redirectResponse["url"].(string))
 	if err != nil {
-		return nil, errors.New(errorMessageInvalidFromURL)
+		return nil, &InvalidFromURLDataError{}
 	}
 
 	if _, ok := redirectResponse["headers"]; !ok {
-		return nil, errors.New(errorMessageRedirectResponseParamHeadersNotExists)
+		return nil, &HeaderParamNotExistsInRedirectResponseDataError{}
 	}
 
 	var cookies []*http.Cookie
@@ -299,7 +288,7 @@ func parseRedirectFromRaw(rawRedirect godet.Params) (*domain.Redirect, error) {
 	status := int(redirectResponse["status"].(float64))
 
 	if _, ok := rawRedirect["initiator"]; !ok {
-		return nil, errors.New(errorMessageRedirectResponseParamInitiatorNotExists)
+		return nil, &InitiatorParamNotExistsInRedirectDataError{}
 	}
 
 	initiator := rawRedirect.Map("initiator")["type"].(string)
@@ -311,7 +300,7 @@ func parseHeadersFromRaw(request map[string]interface{}) (*http.Header, error) {
 	requestHeaders := &http.Header{}
 
 	if _, ok := request["headers"]; !ok {
-		return requestHeaders, errors.New(errorMessageRequestParamHeadersNotExists)
+		return requestHeaders, &HeaderParamNotExistsInRedirectDataError{}
 	}
 
 	requestHeadersRaw := request["headers"].(map[string]interface{})
@@ -335,24 +324,24 @@ func parseCookies(s string) []*http.Cookie {
 	return cookies
 }
 
-func pareseMainResponseFromRaw(rawResponses godet.Params) (*domain.Redirect, error) {
+func parseMainResponseFromRaw(rawResponses godet.Params) (*domain.Redirect, error) {
 	if _, ok := rawResponses["response"]; !ok {
-		return nil, errors.New(errorMessageResponseParamNotExists)
+		return nil, &ResponseParamNotExistsInRedirectDataError{}
 	}
 
 	response := rawResponses.Map("response")
 
 	if _, ok := response["url"]; !ok {
-		return nil, errors.New(errorMessageRedirectResponseParamURLNotExists)
+		return nil, &URLParamNotExistsInRedirectDataError{}
 	}
 
 	to, err := url.Parse(response["url"].(string))
 	if err != nil {
-		return nil, errors.New(errorMessageInvalidToURL)
+		return nil, &InvalidToURLDataError{}
 	}
 
 	if _, ok := response["headers"]; !ok {
-		return nil, errors.New(errorMessageRedirectResponseParamHeadersNotExists)
+		return nil, &HeaderParamNotExistsInRedirectResponseDataError{}
 	}
 
 	var cookies []*http.Cookie
@@ -368,7 +357,7 @@ func pareseMainResponseFromRaw(rawResponses godet.Params) (*domain.Redirect, err
 	}
 
 	if _, ok := response["requestHeaders"]; !ok {
-		return nil, errors.New(errorMessageRequestParamHeadersNotExists)
+		return nil, &HeaderParamNotExistsInRedirectDataError{}
 	}
 
 	requestHeaders := http.Header{}
@@ -385,54 +374,56 @@ func pareseMainResponseFromRaw(rawResponses godet.Params) (*domain.Redirect, err
 }
 
 func newTab(debugger ChromeRemoteDebuggerInterface, url *url.URL, size *ScreenSize, filePath string) (string, error) {
+	frameID := ``
+
 	// create new tab
 	tab, _ := debugger.NewTab(url.String())
 	defer func(tab *godet.Tab) {
 		err := debugger.CloseTab(tab)
 		if err != nil {
-			log.Println(fmt.Errorf("`CloseTab` failed. %s", err))
+			log.Println(&CloseTabError{err: err})
 		}
 	}(tab)
 
 	err := debugger.NetworkEvents(true)
 	if err != nil {
-		return ``, fmt.Errorf("`NetworkEvents failed. %s", err)
+		return frameID, &NetworkEventsError{err: err}
 	}
 
 	// navigate in existing tab
 	err = debugger.ActivateTab(tab)
 	if err != nil {
-		return ``, fmt.Errorf("`ActivateTab` failed. %s", err)
+		return frameID, &ActiveTabError{}
 	}
 
 	// re-enable events when changing active tab
 	err = debugger.AllEvents(true) // enable all events
 	if err != nil {
-		return ``, fmt.Errorf("`AllEvents` failed. %s", err)
+		return frameID, &AllEventsError{err: err}
 	}
 
 	err = debugger.SetDeviceMetricsOverride(size.Width, size.Height, 0, false, false)
 	if err != nil {
-		return ``, fmt.Errorf("set screen size error: %s", err)
+		return frameID, &SetScreenSizeError{err: err}
 	}
 
 	err = debugger.SetVisibleSize(size.Width, size.Height)
 	if err != nil {
-		return ``, fmt.Errorf("set visibility size error: %s", err)
+		return frameID, &SetVisibilitySizeError{err: err}
 	}
 
-	frameId, err := debugger.Navigate(url.String())
+	frameID, err = debugger.Navigate(url.String())
 	if err != nil {
-		return frameId, fmt.Errorf("`Navigate` failed. %s", err)
+		return frameID, &NavigateError{err: err}
 	}
 
 	time.Sleep(time.Second * screenshotDelay)
 
 	// take a screenshot
-	err = debugger.SaveScreenshot(filePath, 0644, 100, true)
+	err = debugger.SaveScreenshot(filePath, 0o644, 100, true)
 	if err != nil {
-		return frameId, fmt.Errorf("cannot capture screenshot: %s", err)
+		return frameID, &CaptureScreenshotError{err: err}
 	}
 
-	return frameId, nil
+	return frameID, nil
 }

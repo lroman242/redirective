@@ -2,13 +2,16 @@ package tracer
 
 import (
 	"encoding/json"
-	"github.com/raff/godet"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/raff/godet"
 )
+
+const testScreenshotName = `testScreenshot.png`
 
 func TestNewChromeTracer(t *testing.T) {
 	size := &ScreenSize{
@@ -22,6 +25,7 @@ func TestNewChromeTracer(t *testing.T) {
 	if chr.(*chromeTracer).screenshotsStoragePath != screenshotsPath {
 		t.Error("Wrong assets path")
 	}
+
 	if chr.(*chromeTracer).size != size {
 		t.Error("Wrong window size")
 	}
@@ -39,14 +43,14 @@ func TestChromeTracer_Trace(t *testing.T) {
 	}
 
 	chr := NewChromeTracer(size, "./assets")
-	screenshotFile := "testScreenshot.png"
+
 	defer func() {
 		err := chr.Close()
 		if err != nil {
 			t.Error(err)
 		}
 
-		_ = os.Remove(screenshotFile)
+		_ = os.Remove(testScreenshotName)
 	}()
 
 	traceURL, err := url.Parse("https://www.google.com.ua")
@@ -54,7 +58,7 @@ func TestChromeTracer_Trace(t *testing.T) {
 		t.Error(err)
 	}
 
-	tr, err := chr.Trace(traceURL, screenshotFile)
+	tr, err := chr.Trace(traceURL, testScreenshotName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -81,14 +85,14 @@ func TestChromeTracer_Trace2(t *testing.T) {
 	}
 
 	chr := NewChromeTracer(size, "./assets")
-	screenshotFile := "testScreenshot.png"
+
 	defer func() {
 		err := chr.Close()
 		if err != nil {
 			t.Log(err)
 		}
 
-		err = os.Remove(screenshotFile)
+		err = os.Remove(testScreenshotName)
 		if err != nil {
 			t.Log(err)
 		}
@@ -99,13 +103,13 @@ func TestChromeTracer_Trace2(t *testing.T) {
 		t.Error(err)
 	}
 
-	tr, err := chr.Trace(traceURL, screenshotFile)
+	tr, err := chr.Trace(traceURL, testScreenshotName)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(tr.Redirects) != 3 {
-		t.Errorf("expected 2 redirects but get %d", len(tr.Redirects))
+	if len(tr.Redirects) != 5 {
+		t.Errorf("expected 5 redirects but get %d", len(tr.Redirects))
 
 		for _, redir := range tr.Redirects {
 			t.Errorf("From %s -> To %s", redir.From.String(), redir.To.String())
@@ -213,11 +217,11 @@ func TestParseRedirectFromRaw2(t *testing.T) {
 	_, err := parseRedirectFromRaw(redirectParams)
 
 	if err == nil {
-		t.Errorf("expect error: %s", errorMessageInvalidToURL)
+		t.Errorf("expect error: %s", (&InvalidToURLDataError{}).Error())
 	}
 
-	if err.Error() != errorMessageInvalidToURL {
-		t.Errorf("expect error: %s but got %s", errorMessageInvalidToURL, err)
+	if err.Error() != (&InvalidToURLDataError{}).Error() {
+		t.Errorf("expect error: %s but got %s", (&InvalidToURLDataError{}).Error(), err)
 	}
 }
 
@@ -230,11 +234,11 @@ func TestParseRedirectFromRaw3(t *testing.T) {
 	_, err := parseRedirectFromRaw(redirectParams)
 
 	if err == nil {
-		t.Errorf("expect error: %s", errorMessageInvalidFromURL)
+		t.Errorf("expect error: %s", (&InvalidFromURLDataError{}).Error())
 	}
 
-	if err.Error() != errorMessageInvalidFromURL {
-		t.Errorf("expect error: %s but got %s", errorMessageInvalidFromURL, err)
+	if err.Error() != (&InvalidFromURLDataError{}).Error() {
+		t.Errorf("expect error: %s but got %s", (&InvalidFromURLDataError{}).Error(), err)
 	}
 }
 
@@ -247,11 +251,11 @@ func TestParseRedirectFromRaw4(t *testing.T) {
 	_, err := parseRedirectFromRaw(redirectParams)
 
 	if err == nil {
-		t.Errorf("expect error: %s", errorMessageRedirectResponseNotExists)
+		t.Errorf("expect error: %s", (&RedirectResponseNotExistsInRawDataError{}).Error())
 	}
 
-	if err.Error() != errorMessageRedirectResponseNotExists {
-		t.Errorf("expect error: %s but got %s", errorMessageRedirectResponseNotExists, err)
+	if err.Error() != (&RedirectResponseNotExistsInRawDataError{}).Error() {
+		t.Errorf("expect error: %s but got %s", (&RedirectResponseNotExistsInRawDataError{}).Error(), err)
 	}
 }
 
@@ -264,11 +268,11 @@ func TestParseRedirectFromRaw5(t *testing.T) {
 	_, err := parseRedirectFromRaw(redirectParams)
 
 	if err == nil {
-		t.Errorf("expect error: %s", errorMessageRequestNotExists)
+		t.Errorf("expect error: %s", (&RequestNotExistsInRawDataError{}).Error())
 	}
 
-	if err.Error() != errorMessageRequestNotExists {
-		t.Errorf("expect error: %s but got %s", errorMessageRequestNotExists, err)
+	if err.Error() != (&RequestNotExistsInRawDataError{}).Error() {
+		t.Errorf("expect error: %s but got %s", (&RequestNotExistsInRawDataError{}).Error(), err)
 	}
 }
 
@@ -281,13 +285,14 @@ func TestParseRedirectFromRaw6(t *testing.T) {
 	_, err := parseRedirectFromRaw(redirectParams)
 
 	if err == nil {
-		t.Errorf("expect error: %s", errorMessageRedirectResponseParamHeadersNotExists)
+		t.Errorf("expect error: %s", (&HeaderParamNotExistsInRedirectResponseDataError{}).Error())
 	}
 
-	if err.Error() != errorMessageRedirectResponseParamHeadersNotExists {
-		t.Errorf("expect error: %s but got %s", errorMessageRedirectResponseParamHeadersNotExists, err)
+	if err.Error() != (&HeaderParamNotExistsInRedirectResponseDataError{}).Error() {
+		t.Errorf("expect error: %s but got %s", (&HeaderParamNotExistsInRedirectResponseDataError{}).Error(), err)
 	}
 }
+
 func TestParseRedirectFromRaw7(t *testing.T) {
 	redirectParams := godet.Params{}
 	if err := json.Unmarshal([]byte(params7), &redirectParams); err != nil {
@@ -296,12 +301,12 @@ func TestParseRedirectFromRaw7(t *testing.T) {
 
 	_, err := parseRedirectFromRaw(redirectParams)
 
-	if err == nil || err.Error() != errorMessageRedirectResponseParamURLNotExists {
-		t.Errorf("expect error: %s", errorMessageRedirectResponseParamURLNotExists)
+	if err == nil || err.Error() != (&URLParamNotExistsInRedirectDataError{}).Error() {
+		t.Errorf("expect error: %s", (&URLParamNotExistsInRedirectDataError{}).Error())
 	}
 
-	if err.Error() != errorMessageRedirectResponseParamURLNotExists {
-		t.Errorf("expect error: %s but got %s", errorMessageRedirectResponseParamURLNotExists, err)
+	if err.Error() != (&URLParamNotExistsInRedirectDataError{}).Error() {
+		t.Errorf("expect error: %s but got %s", (&URLParamNotExistsInRedirectDataError{}).Error(), err)
 	}
 }
 
@@ -314,11 +319,11 @@ func TestParseRedirectFromRaw8(t *testing.T) {
 	_, err := parseRedirectFromRaw(redirectParams)
 
 	if err == nil {
-		t.Errorf("Expect error: %s", errorMessageRequestParamHeadersNotExists)
+		t.Errorf("Expect error: %s", (&HeaderParamNotExistsInRedirectDataError{}).Error())
 	}
 
-	if err.Error() != errorMessageRequestParamHeadersNotExists {
-		t.Errorf("Expect error: %s but got %s", errorMessageRequestParamHeadersNotExists, err)
+	if err.Error() != (&HeaderParamNotExistsInRedirectDataError{}).Error() {
+		t.Errorf("Expect error: %s but got %s", (&HeaderParamNotExistsInRedirectDataError{}).Error(), err)
 	}
 }
 
@@ -883,11 +888,11 @@ const params8 = `
 func Test_pareseMainResponseFromRaw_NoResponse(t *testing.T) {
 	var input godet.Params = godet.Params{}
 
-	rd, err := pareseMainResponseFromRaw(input)
+	rd, err := parseMainResponseFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageResponseParamNotExists)
-	} else if strings.Compare(err.Error(), errorMessageResponseParamNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageResponseParamNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&ResponseParamNotExistsInRedirectDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&ResponseParamNotExistsInRedirectDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&ResponseParamNotExistsInRedirectDataError{}).Error(), err.Error())
 	}
 
 	if rd != nil {
@@ -908,11 +913,11 @@ func Test_pareseMainResponseFromRaw_Response_NoUrl(t *testing.T) {
 		},
 	}
 
-	rd, err := pareseMainResponseFromRaw(input)
+	rd, err := parseMainResponseFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRedirectResponseParamURLNotExists)
-	} else if strings.Compare(err.Error(), errorMessageRedirectResponseParamURLNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRedirectResponseParamURLNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&URLParamNotExistsInRedirectDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&URLParamNotExistsInRedirectDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&URLParamNotExistsInRedirectDataError{}).Error(), err.Error())
 	}
 
 	if rd != nil {
@@ -933,11 +938,11 @@ func Test_pareseMainResponseFromRaw_Response_InvalidUrl(t *testing.T) {
 		},
 	}
 
-	rd, err := pareseMainResponseFromRaw(input)
+	rd, err := parseMainResponseFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageInvalidToURL)
-	} else if strings.Compare(err.Error(), errorMessageInvalidToURL) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageInvalidToURL, err.Error())
+		t.Errorf("expected error `%s`", (&InvalidToURLDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&InvalidToURLDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&InvalidToURLDataError{}).Error(), err.Error())
 	}
 
 	if rd != nil {
@@ -958,11 +963,11 @@ func Test_pareseMainResponseFromRaw_Response_NoHeaders(t *testing.T) {
 		},
 	}
 
-	rd, err := pareseMainResponseFromRaw(input)
+	rd, err := parseMainResponseFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRedirectResponseParamHeadersNotExists)
-	} else if strings.Compare(err.Error(), errorMessageRedirectResponseParamHeadersNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRedirectResponseParamHeadersNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&HeaderParamNotExistsInRedirectResponseDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&HeaderParamNotExistsInRedirectResponseDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&HeaderParamNotExistsInRedirectResponseDataError{}).Error(), err.Error())
 	}
 
 	if rd != nil {
@@ -983,11 +988,11 @@ func Test_pareseMainResponseFromRaw_Response_NoRequestHeaders(t *testing.T) {
 		},
 	}
 
-	rd, err := pareseMainResponseFromRaw(input)
+	rd, err := parseMainResponseFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRequestParamHeadersNotExists)
-	} else if strings.Compare(err.Error(), errorMessageRequestParamHeadersNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRequestParamHeadersNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&HeaderParamNotExistsInRedirectDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&HeaderParamNotExistsInRedirectDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&HeaderParamNotExistsInRedirectDataError{}).Error(), err.Error())
 	}
 
 	if rd != nil {
@@ -995,24 +1000,24 @@ func Test_pareseMainResponseFromRaw_Response_NoRequestHeaders(t *testing.T) {
 	}
 }
 
-func Test_pareseMainResponseFromRaw(t *testing.T) {
-	input := godet.Params{
-		"response": map[string]interface{}{
-			"headers": map[string]interface{}{
-				"set-cookie": "key0=f66d4763-7f3f-4ac1-b30a-3cbf31f46123; expires=Wed, 08-Jan-2100 18:01:07 GMT; Max-Age=2592000; domain=domain.com",
-				"someName":   "someValue",
-			},
-			"url": "http://www.google.com.ua",
-			"requestHeaders": map[string]interface{}{
-				"someName1": "someValue1",
-				"someName2": "someValue2",
-				"someName3": "someValue3",
-			},
-			"status": 203.00,
+var testInput = godet.Params{
+	"response": map[string]interface{}{
+		"headers": map[string]interface{}{
+			"set-cookie": "key0=f66d4763-7f3f-4ac1-b30a-3cbf31f46123; expires=Wed, 08-Jan-2100 18:01:07 GMT; Max-Age=2592000; domain=domain.com",
+			"someName":   "someValue",
 		},
-	}
+		"url": "http://www.google.com.ua",
+		"requestHeaders": map[string]interface{}{
+			"someName1": "someValue1",
+			"someName2": "someValue2",
+			"someName3": "someValue3",
+		},
+		"status": 203.00,
+	},
+}
 
-	rd, err := pareseMainResponseFromRaw(input)
+func Test_pareseMainResponseFromRaw(t *testing.T) {
+	rd, err := parseMainResponseFromRaw(testInput)
 	if err != nil {
 		t.Errorf("unexpected error `%s`", err)
 	}
@@ -1133,9 +1138,9 @@ func Test_ParseHeadersFromRaw_NoHeaders(t *testing.T) {
 
 	result, err := parseHeadersFromRaw(request)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRequestParamHeadersNotExists)
-	} else if strings.Compare(errorMessageRequestParamHeadersNotExists, err.Error()) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRequestParamHeadersNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&HeaderParamNotExistsInRedirectDataError{}).Error())
+	} else if strings.Compare((&HeaderParamNotExistsInRedirectDataError{}).Error(), err.Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&HeaderParamNotExistsInRedirectDataError{}).Error(), err.Error())
 	}
 
 	if len(*result) != 0 {
@@ -1162,27 +1167,11 @@ func Test_ParseHeadersFromRaw(t *testing.T) {
 }
 
 func Test_ParseRedirectFromRaw_NoRedirectResponse(t *testing.T) {
-	var input godet.Params = godet.Params{
-		"response": map[string]interface{}{
-			"headers": map[string]interface{}{
-				"set-cookie": "key=f66d4763-7f3f-4ac1-b30a-3cbf31f4628a; expires=Wed, 08-Jan-2100 18:01:07 GMT; Max-Age=2592000; domain=domain.com",
-				"someName":   "someValue",
-			},
-			"url": "http://www.google.com.ua",
-			"requestHeaders": map[string]interface{}{
-				"someName1": "someValue1",
-				"someName2": "someValue2",
-				"someName3": "someValue3",
-			},
-			"status": 203.00,
-		},
-	}
-
-	r, err := parseRedirectFromRaw(input)
+	r, err := parseRedirectFromRaw(testInput)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRedirectResponseNotExists)
-	} else if strings.Compare(err.Error(), errorMessageRedirectResponseNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRedirectResponseNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&RedirectResponseNotExistsInRawDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&RedirectResponseNotExistsInRawDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&RedirectResponseNotExistsInRawDataError{}).Error(), err.Error())
 	}
 
 	if r != nil {
@@ -1204,9 +1193,9 @@ func Test_ParseRedirectFromRaw_NoRequest(t *testing.T) {
 
 	r, err := parseRedirectFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRequestNotExists)
-	} else if strings.Compare(err.Error(), errorMessageRequestNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRequestNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&RequestNotExistsInRawDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&RequestNotExistsInRawDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&RequestNotExistsInRawDataError{}).Error(), err.Error())
 	}
 
 	if r != nil {
@@ -1235,9 +1224,9 @@ func Test_ParseRedirectFromRaw_InvalidDocumentURL(t *testing.T) {
 
 	r, err := parseRedirectFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageInvalidToURL)
-	} else if strings.Compare(err.Error(), errorMessageInvalidToURL) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageInvalidToURL, err.Error())
+		t.Errorf("expected error `%s`", (&InvalidToURLDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&InvalidToURLDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&InvalidToURLDataError{}).Error(), err.Error())
 	}
 
 	if r != nil {
@@ -1266,9 +1255,9 @@ func Test_ParseRedirectFromRaw_RedirectNoURL(t *testing.T) {
 
 	r, err := parseRedirectFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRedirectResponseParamURLNotExists)
-	} else if strings.Compare(err.Error(), errorMessageRedirectResponseParamURLNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRedirectResponseParamURLNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&URLParamNotExistsInRedirectDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&URLParamNotExistsInRedirectDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&URLParamNotExistsInRedirectDataError{}).Error(), err.Error())
 	}
 
 	if r != nil {
@@ -1297,9 +1286,9 @@ func Test_ParseRedirectFromRaw_RedirectInvalidURL(t *testing.T) {
 
 	r, err := parseRedirectFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageInvalidFromURL)
-	} else if strings.Compare(err.Error(), errorMessageInvalidFromURL) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageInvalidFromURL, err.Error())
+		t.Errorf("expected error `%s`", (&InvalidFromURLDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&InvalidFromURLDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&InvalidFromURLDataError{}).Error(), err.Error())
 	}
 
 	if r != nil {
@@ -1324,9 +1313,9 @@ func Test_ParseRedirectFromRaw_RedirectNoHeaders(t *testing.T) {
 
 	r, err := parseRedirectFromRaw(input)
 	if err == nil {
-		t.Errorf("expected error `%s`", errorMessageRedirectResponseParamHeadersNotExists)
-	} else if strings.Compare(err.Error(), errorMessageRedirectResponseParamHeadersNotExists) != 0 {
-		t.Errorf("expected error `%s`, but got `%s`", errorMessageRedirectResponseParamHeadersNotExists, err.Error())
+		t.Errorf("expected error `%s`", (&HeaderParamNotExistsInRedirectResponseDataError{}).Error())
+	} else if strings.Compare(err.Error(), (&HeaderParamNotExistsInRedirectResponseDataError{}).Error()) != 0 {
+		t.Errorf("expected error `%s`, but got `%s`", (&HeaderParamNotExistsInRedirectResponseDataError{}).Error(), err.Error())
 	}
 
 	if r != nil {
