@@ -3,3 +3,4 @@ vendor/
 tmp/
 assets/screenshots/*.png
 redirective
+redirective_*

@@ -3,10 +3,6 @@ package registry
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/julienschmidt/httprouter"
 	"github.com/lroman242/redirective/config"
 	"github.com/lroman242/redirective/infrastructure/logger"
@@ -19,6 +15,9 @@ import (
 	"github.com/lroman242/redirective/usecase/presenter"
 	"github.com/lroman242/redirective/usecase/repository"
 	"github.com/rs/cors"
+	"log"
+	"net/http"
+	"os"
 )
 
 const (
@@ -102,7 +101,7 @@ func (r *registry) NewTracePresenter() presenter.TracePresenter {
 		protocol = "http"
 	}
 
-	return ip.NewTracePresenter("r", protocol)
+	return ip.NewTracePresenter(r.conf.AppDomain, protocol)
 }
 
 // NewHandler will build new http.Handler with applied routes.
