@@ -10,8 +10,9 @@ require (
 	github.com/gobs/simplejson v0.0.0-20181106204727-c70e6bd5e26b // indirect
 	github.com/golang/mock v1.4.4
 	github.com/gorilla/websocket v1.4.1 // indirect
+	github.com/joho/godotenv v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/opentracing/opentracing-go v1.1.1-0.20190913142402-a7454ce5950e
+	github.com/opentracing/opentracing-go v1.1.1-0.20190913142402-a7454ce5950e // indirect
 	github.com/ory/dockertest/v3 v3.6.0 // indirect
 	github.com/raff/godet v0.0.0-20190830172613-29652e04000e
 	github.com/rs/cors v1.6.0

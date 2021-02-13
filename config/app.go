@@ -5,8 +5,11 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/joho/godotenv"
 )
 
 // AppConfig describe configuration for all parts of application.
@@ -28,10 +31,40 @@ type AppConfig struct {
 //	// TODO: parse from json
 //}
 //
-//func ParseENV(path string) *AppConfig {
-////	// TODO: parse from .env
-//}
-//
+func ParseENV(path string) *AppConfig {
+	_ = godotenv.Load()
+
+	screenshotsStoragePath := envString("SCREENSHOTS_PATH", "assets/screenshots")
+	err := checkScreenshotsStorageDir(screenshotsStoragePath)
+	if err != nil {
+		log.Fatalf("folder to store screenshots not found and couldn`t be created. error: %s", err)
+	}
+
+	if !strings.HasSuffix(screenshotsStoragePath, "/") {
+		screenshotsStoragePath = screenshotsStoragePath + "/"
+	}
+
+	return &AppConfig{
+		AppDomain: envString("APP_DOMAIN", "localhost"),
+		Storage: &StorageConfig{
+			Host:     envString("STORAGE_HOST", "localhost"),
+			Port:     envInt("STORAGE_PORT", 3306),
+			User:     envString("STORAGE_USER", "root"),
+			Password: envString("STORAGE_PASSWORD", "secret"),
+			Database: envString("STORAGE_DATABASE", "redirective"),
+			Table:    envString("STORAGE_TABLE", "results"),
+		},
+		HTTPServer: &HTTPServerConfig{
+			Host:     envString("SERVER_HOST", "localhost"),
+			Port:     envInt("SERVER_PORT", 8080),
+			HTTPS:    envString("SERVER_CERT_PATH", "") != "" && envString("SERVER_KEY_PATH", "") != "",
+			CertPath: envString("SERVER_CERT_PATH", ""),
+			KeyPath:  envString("SERVER_KEY_PATH", ""),
+		},
+		ScreenshotsPath: screenshotsStoragePath,
+		LogsPath:        envString("LOG_PATH", "logs"),
+	}
+}
 
 // ParseConsole function will parse config options from CLI arguments.
 func ParseConsole() *AppConfig {
@@ -166,4 +199,42 @@ type NoPermissionsToWriteInDirError struct {
 // Error function return error message.
 func (e *NoPermissionsToWriteInDirError) Error() string {
 	return `user doesn't have permission to write to this directory`
+}
+
+// parse string value from os environment
+// return default value if not found.
+func envString(key, def string) string {
+	if env := os.Getenv(key); env != "" {
+		return env
+	}
+	return def
+}
+
+// parse int value from os environment
+// return default value if not found.
+func envInt(key string, def int) int {
+	env := os.Getenv(key)
+	if env == "" {
+		return def
+	}
+
+	i, err := strconv.Atoi(env)
+	if err != nil {
+		return def
+	}
+
+	return i
+}
+
+// parse bool value from os environment
+// return default value if not found.
+func envBool(key string, def bool) bool {
+	if env := os.Getenv(key); env == "" {
+		return def
+	}
+	if env := os.Getenv(key); env == "true" || env == "1" {
+		return true
+	}
+
+	return false
 }
