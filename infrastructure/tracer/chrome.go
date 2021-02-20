@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -65,7 +64,6 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 		return nil, err
 	}
 
-	// TODO: find if it's possible to restart chrome!
 	remote.CallbackEvent("RemoteDebugger.disconnected", func(params godet.Params) {
 		log.Println("Remote disconnected")
 		panic("Remote disconnected")
@@ -76,11 +74,11 @@ func (ct *chromeTracer) initChromeRemoteDebugger() (ChromeRemoteDebuggerInterfac
 
 // Close method will stop google-chrome process.
 func (ct *chromeTracer) Close() error {
-	if err := ct.chromeProcess.Kill(); err != nil {
-		log.Fatalf("Close error: %s\n", err)
-
-		return err
-	}
+	//if err := ct.chromeProcess.Kill(); err != nil {
+	//	log.Fatalf("Close error: %s\n", err)
+	//
+	//	return err
+	//}
 
 	return nil
 }
@@ -94,32 +92,32 @@ func (ct *chromeTracer) ChromeProcess() *os.Process {
 func NewChromeTracer(size *ScreenSize, screenshotsStoragePath string) ChromeTracer {
 	// /usr/bin/google-chrome --addr=localhost --port=9222 --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --disable-extensions --disable-gpu --headless --hide-scrollbars --no-first-run --no-sandbox --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/77.0.3854.3 Chrome/77.0.3854.3 Safari/537.36"
 	// TODO: get chrome port and path from func args
-	cmd := exec.Command("/usr/bin/google-chrome",
-		"--addr=localhost",
-		"--port=9222",
-		"--remote-debugging-port=9222",
-		"--remote-debugging-address=0.0.0.0",
-		"--disable-extensions",
-		"--disable-gpu",
-		"--headless",
-		"--hide-scrollbars",
-		"--no-first-run",
-		"--no-sandbox",
-		"--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
-
-	cmd.Stdout = os.Stdout
-
-	err := cmd.Start()
-	if err != nil {
-		panic(err)
-	}
+	//cmd := exec.Command("/usr/bin/google-chrome",
+	//	"--addr=localhost",
+	//	"--port=9222",
+	//	"--remote-debugging-port=9222",
+	//	"--remote-debugging-address=0.0.0.0",
+	//	"--disable-extensions",
+	//	"--disable-gpu",
+	//	"--headless",
+	//	"--hide-scrollbars",
+	//	"--no-first-run",
+	//	"--no-sandbox",
+	//	"--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
+	//
+	//cmd.Stdout = os.Stdout
+	//
+	//err := cmd.Start()
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	ct := &chromeTracer{
 		chromePort: 9222,
 		// chromePath:             path,
 		size:                   size,
 		screenshotsStoragePath: screenshotsStoragePath,
-		chromeProcess:          cmd.Process,
+		// chromeProcess:          cmd.Process,
 	}
 
 	return ct

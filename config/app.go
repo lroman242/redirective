@@ -12,6 +12,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const bytesShift = 7
+
 // AppConfig describe configuration for all parts of application.
 type AppConfig struct {
 	AppDomain string
@@ -20,6 +22,19 @@ type AppConfig struct {
 	HTTPServer      *HTTPServerConfig
 	ScreenshotsPath string
 	LogsPath        string
+	Tracer
+}
+
+// Parse function will parse application configuration.
+func Parse() *AppConfig {
+	switch os.Args[0] {
+	case "env":
+		return ParseENV()
+	// case 'json':
+	// case 'yaml':
+	default:
+		return ParseConsole()
+	}
 }
 
 //
@@ -30,11 +45,13 @@ type AppConfig struct {
 //func ParseJSON(path string) *AppConfig {
 //	// TODO: parse from json
 //}
-//
-func ParseENV(path string) *AppConfig {
+
+// ParseENV function will parse application configuration.
+func ParseENV() *AppConfig {
 	_ = godotenv.Load()
 
 	screenshotsStoragePath := envString("SCREENSHOTS_PATH", "assets/screenshots")
+
 	err := checkScreenshotsStorageDir(screenshotsStoragePath)
 	if err != nil {
 		log.Fatalf("folder to store screenshots not found and couldn`t be created. error: %s", err)
@@ -148,7 +165,7 @@ func isWritable(path string) (bool, error) {
 	}
 
 	// Check if the user bit is enabled in file permission
-	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
+	if info.Mode().Perm()&(1<<(uint(bytesShift))) == 0 {
 		return false, &NoWritePermissionsForUser{}
 	}
 
@@ -207,6 +224,7 @@ func envString(key, def string) string {
 	if env := os.Getenv(key); env != "" {
 		return env
 	}
+
 	return def
 }
 
@@ -224,17 +242,4 @@ func envInt(key string, def int) int {
 	}
 
 	return i
-}
-
-// parse bool value from os environment
-// return default value if not found.
-func envBool(key string, def bool) bool {
-	if env := os.Getenv(key); env == "" {
-		return def
-	}
-	if env := os.Getenv(key); env == "true" || env == "1" {
-		return true
-	}
-
-	return false
 }

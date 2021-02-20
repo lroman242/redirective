@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/lroman242/redirective/config"
@@ -12,16 +13,16 @@ import (
 )
 
 func main() {
-	conf := config.ParseConsole()
+	conf := config.Parse()
 
 	r := registry.NewRegistry(conf)
 	handler := r.NewHandler()
 
 	// start http server
 	go func(handler http.Handler) {
-		log.Println("Listening http on 8080")
+		log.Println("Listening http on " + strconv.Itoa(conf.HTTPServer.Port))
 
-		err := http.ListenAndServe(":8080", handler)
+		err := http.ListenAndServe(conf.HTTPServer.Host+":"+strconv.Itoa(conf.HTTPServer.Port), handler)
 		if err != nil {
 			log.Printf("ListenAndServe error: %s", err)
 		}

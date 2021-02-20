@@ -3,6 +3,10 @@ package registry
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/lroman242/redirective/config"
 	"github.com/lroman242/redirective/infrastructure/logger"
@@ -15,9 +19,6 @@ import (
 	"github.com/lroman242/redirective/usecase/presenter"
 	"github.com/lroman242/redirective/usecase/repository"
 	"github.com/rs/cors"
-	"log"
-	"net/http"
-	"os"
 )
 
 const (

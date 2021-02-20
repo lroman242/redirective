@@ -3,10 +3,11 @@ package presenter
 
 import (
 	"fmt"
-	"github.com/lroman242/redirective/domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"path/filepath"
 	"strconv"
+
+	"github.com/lroman242/redirective/domain"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // TracePresenter interface represent presenter service related for trace results.
@@ -42,7 +43,7 @@ func (t *tracePresenter) ResponseScreenshot(filename string) string {
 	return t.protocol + "://" + t.appDomain + "/screenshots/" + filepath.Base(filename)
 }
 
-// getIDString function represent TraceResults.ID as string
+// getIDString function represent TraceResults.ID as string.
 func (t *tracePresenter) getIDString(ID interface{}) string {
 	switch tp := ID.(type) {
 	case int:

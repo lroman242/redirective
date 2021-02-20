@@ -18,7 +18,7 @@ func TestStackTrace_Message(t *testing.T) {
 }
 
 func TestStackTrace_Path(t *testing.T) {
-	expectedPath := "/stacktrace_test.go:21"
+	expectedPath := "/stacktrace_test.go:22"
 	stackTrace := logger.NewStackTrace(expectedMessage, 1)
 
 	if stackTrace.Path() != expectedPath {
@@ -27,7 +27,7 @@ func TestStackTrace_Path(t *testing.T) {
 }
 
 func TestStackTrace_String(t *testing.T) {
-	expectedPath := "/stacktrace_test.go:30"
+	expectedPath := "/stacktrace_test.go:31"
 	stackTrace := logger.NewStackTrace(expectedMessage, 1)
 
 	if !strings.Contains(stackTrace.String(), expectedMessage) {

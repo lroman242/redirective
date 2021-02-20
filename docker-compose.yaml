@@ -1,5 +1,21 @@
 version: '3.5'
+
 services:
+  redirective:
+    image: redirective-scratch:latest
+    env_file :
+      - ./.env
+    volumes:
+      - ./logs:${LOG_PATH}
+    ports:
+    - 8080:8080
+    depends_on:
+      - mongo
+      - chrome
+    links:
+      - mongo
+      - chrome
+
   chrome:
     hostname: chrome
     image: mkenney/chromium-headless:latest
